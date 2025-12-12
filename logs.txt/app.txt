@@ -1,0 +1,540 @@
+frescures.py:18 src.frescures: FRESCURAS:      CODIGO                                 DESCRIPCION  SHELF_LIFE
+0    3000003         CORONA EXTRA BOTE H-C 24/355 ML CT       360.0
+1    3000022           VICTORIA MEGA 12/1.2 L CT R LISA       360.0
+2    3000050  PACIFICO LIGHT BOTE 8 PK H- C 24/355ML CT       365.0
+3    3000060               BUDWEISER BOTE 6 PK 24/12 OZ       365.0
+4    3000061               BUDWEISER 6 PACK 24/12 OZ CM       365.0
+..       ...                                        ...         ...
+264  3018199    PACIFICO SUAVE BOTE 4PKH-C 24/473 ML CT         NaN
+265  3018347  Victoria Chamoy bote 6 pack 21/473 ML MAQ         NaN
+266  3018373        CORONITA CERO 24 PACK 24/2130 ML NR         NaN
+267  3018427            Negra Modelo Cero 6pk 12/355 NR         NaN
+268  3018438     MODELO DORADA CERO 6 PACK 12/355 ML NR         NaN
+
+[269 rows x 3 columns]
+main.py:38 __main__: Proceso terminado correctamente.
+frescures.py:18 src.frescures: FRESCURAS:      CODIGO                                 DESCRIPCION  SHELF LIFE
+0    3000003         CORONA EXTRA BOTE H-C 24/355 ML CT         360
+1    3000022           VICTORIA MEGA 12/1.2 L CT R LISA         360
+2    3000050  PACIFICO LIGHT BOTE 8 PK H- C 24/355ML CT         365
+3    3000060               BUDWEISER BOTE 6 PK 24/12 OZ         365
+4    3000061               BUDWEISER 6 PACK 24/12 OZ CM         365
+..       ...                                        ...         ...
+235  3018199    PACIFICO SUAVE BOTE 4PKH-C 24/473 ML CT         360
+236  3018347  Victoria Chamoy bote 6 pack 21/473 ML MAQ         360
+237  3018373        CORONITA CERO 24 PACK 24/2130 ML NR         360
+238  3018427            Negra Modelo Cero 6pk 12/355 NR         180
+239  3018438     MODELO DORADA CERO 6 PACK 12/355 ML NR         180
+
+[240 rows x 3 columns]
+main.py:38 __main__: Proceso terminado correctamente.
+frescures.py:20 src.frescures: FRESCURAS:      CODIGO                                 DESCRIPCION  SHELF LIFE
+0    3000003         CORONA EXTRA BOTE H-C 24/355 ML CT         360
+1    3000022           VICTORIA MEGA 12/1.2 L CT R LISA         360
+2    3000050  PACIFICO LIGHT BOTE 8 PK H- C 24/355ML CT         365
+3    3000060               BUDWEISER BOTE 6 PK 24/12 OZ         365
+4    3000061               BUDWEISER 6 PACK 24/12 OZ CM         365
+..       ...                                        ...         ...
+235  3018199    PACIFICO SUAVE BOTE 4PKH-C 24/473 ML CT         360
+236  3018347  Victoria Chamoy bote 6 pack 21/473 ML MAQ         360
+237  3018373        CORONITA CERO 24 PACK 24/2130 ML NR         360
+238  3018427            Negra Modelo Cero 6pk 12/355 NR         180
+239  3018438     MODELO DORADA CERO 6 PACK 12/355 ML NR         180
+
+[240 rows x 3 columns]
+main.py:38 __main__: Proceso terminado correctamente.
+frescures.py:31 src.frescures: VALIDAS: <re.Match object; span=(0, 4), match='J045'>
+frescures.py:31 src.frescures: VALIDAS: <re.Match object; span=(0, 4), match='L315'>
+frescures.py:31 src.frescures: VALIDAS: <re.Match object; span=(0, 4), match='F135'>
+frescures.py:31 src.frescures: VALIDAS: <re.Match object; span=(0, 4), match='J265'>
+frescures.py:31 src.frescures: VALIDAS: None
+main.py:38 __main__: Proceso terminado correctamente.
+frescures.py:31 src.frescures: VALIDAS: <re.Match object; span=(0, 4), match='J045'>
+frescures.py:31 src.frescures: VALIDAS: <re.Match object; span=(0, 4), match='L315'>
+frescures.py:31 src.frescures: VALIDAS: <re.Match object; span=(0, 4), match='F135'>
+frescures.py:31 src.frescures: VALIDAS: <re.Match object; span=(0, 4), match='J265'>
+frescures.py:31 src.frescures: VALIDAS: None
+main.py:38 __main__: Proceso terminado correctamente.
+frescures.py:31 src.frescures: VALIDAS: None
+frescures.py:31 src.frescures: VALIDAS: <re.Match object; span=(0, 4), match='L315'>
+frescures.py:31 src.frescures: VALIDAS: <re.Match object; span=(0, 4), match='F135'>
+frescures.py:31 src.frescures: VALIDAS: <re.Match object; span=(0, 4), match='J265'>
+frescures.py:31 src.frescures: VALIDAS: None
+main.py:38 __main__: Proceso terminado correctamente.
+main.py:40 __main__: Error en el proceso de generación del modelo: {e}
+Traceback (most recent call last):
+  File "C:\automatizer\main.py", line 36, in <module>
+    automatizer = Automatizer(SHELF_TIMES, PROJECT_ROOT)
+  File "C:\automatizer\src\frescures.py", line 16, in __init__
+    self.get_dates()
+    ^^^^^^^^^^^^^^
+AttributeError: 'Automatizer' object has no attribute 'get_dates'
+main.py:38 __main__: Proceso terminado correctamente.
+main.py:38 __main__: Proceso terminado correctamente.
+main.py:38 __main__: Proceso terminado correctamente.
+frescures.py:32 src.frescures: VALIDAS: None
+frescures.py:32 src.frescures: VALIDAS: <re.Match object; span=(0, 4), match='L315'>
+frescures.py:32 src.frescures: VALIDAS: <re.Match object; span=(0, 4), match='F135'>
+frescures.py:32 src.frescures: VALIDAS: <re.Match object; span=(0, 4), match='J265'>
+frescures.py:32 src.frescures: VALIDAS: None
+main.py:38 __main__: Proceso terminado correctamente.
+frescures.py:44 src.frescures: Error al convertir 'J345': Fecha inválida desde 'J345': day 34 must be in range 1..31 for month 10 in year 2025
+frescures.py:44 src.frescures: Error al convertir 'M085': Fecha inválida desde 'M085': month must be in 1..12, not 13
+frescures.py:50 src.frescures: Fechas convertidas: ['31/12/2025', '13/06/2025', '26/10/2025']
+main.py:38 __main__: Proceso terminado correctamente.
+main.py:40 __main__: Error en el proceso de generación del modelo: {e}
+Traceback (most recent call last):
+  File "C:\automatizer\utils\utils.py", line 25, in frescure_to_date
+    dt = datetime(year, mes, dia)
+ValueError: day 34 must be in range 1..31 for month 10 in year 2025
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\automatizer\main.py", line 36, in <module>
+    automatizer = Automatizer(SHELF_TIMES, PROJECT_ROOT)
+  File "C:\automatizer\src\frescures.py", line 17, in __init__
+    self.validate_dates_test()
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\automatizer\src\frescures.py", line 47, in validate_dates_test
+    fechas = self.get_dates(frescuras_ejemplos)
+  File "C:\automatizer\src\frescures.py", line 41, in get_dates
+    fecha = frescure_to_date(frescura)
+  File "C:\automatizer\utils\utils.py", line 27, in frescure_to_date
+    raise ValueError(f"Fecha inválida desde '{frescure}': {e}") from e
+ValueError: Fecha inválida desde 'J345': day 34 must be in range 1..31 for month 10 in year 2025
+main.py:40 __main__: Error en el proceso de generación del modelo: {e}
+Traceback (most recent call last):
+  File "C:\automatizer\main.py", line 36, in <module>
+    automatizer = Automatizer(SHELF_TIMES, PROJECT_ROOT)
+  File "C:\automatizer\src\frescures.py", line 17, in __init__
+    self.validate_dates_test()
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\automatizer\src\frescures.py", line 44, in validate_dates_test
+    fechas = self.get_dates(frescuras_ejemplos)
+  File "C:\automatizer\src\frescures.py", line 38, in get_dates
+    fecha = frescure_to_date(valid)
+  File "C:\automatizer\utils\utils.py", line 18, in frescure_to_date
+    dia = int(frescure[1:3])
+ValueError: invalid literal for int() with base 10: 'on'
+frescures.py:37 src.frescures: VALIDOS: None
+main.py:40 __main__: Error en el proceso de generación del modelo: {e}
+Traceback (most recent call last):
+  File "C:\automatizer\main.py", line 36, in <module>
+    automatizer = Automatizer(SHELF_TIMES, PROJECT_ROOT)
+  File "C:\automatizer\src\frescures.py", line 17, in __init__
+    self.validate_dates_test()
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\automatizer\src\frescures.py", line 45, in validate_dates_test
+    fechas = self.get_dates(frescuras_ejemplos)
+  File "C:\automatizer\src\frescures.py", line 38, in get_dates
+    fecha = frescure_to_date(valid)
+  File "C:\automatizer\utils\utils.py", line 18, in frescure_to_date
+    dia = int(frescure[1:3])
+ValueError: invalid literal for int() with base 10: 'on'
+frescures.py:37 src.frescures: VALIDOS: None
+main.py:40 __main__: Error en el proceso de generación del modelo: {e}
+Traceback (most recent call last):
+  File "C:\automatizer\main.py", line 36, in <module>
+    automatizer = Automatizer(SHELF_TIMES, PROJECT_ROOT)
+  File "C:\automatizer\src\frescures.py", line 17, in __init__
+    self.validate_dates_test()
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\automatizer\src\frescures.py", line 45, in validate_dates_test
+    fechas = self.get_dates(frescuras_ejemplos)
+  File "C:\automatizer\src\frescures.py", line 38, in get_dates
+    fecha = frescure_to_date(valid)
+  File "C:\automatizer\utils\utils.py", line 17, in frescure_to_date
+    letra = frescure[0].upper()
+            ~~~~~~~~^^^
+TypeError: 'NoneType' object is not subscriptable
+frescures.py:37 src.frescures: VALIDOS: None
+main.py:40 __main__: Error en el proceso de generación del modelo: {e}
+Traceback (most recent call last):
+  File "C:\automatizer\main.py", line 36, in <module>
+    automatizer = Automatizer(SHELF_TIMES, PROJECT_ROOT)
+  File "C:\automatizer\src\frescures.py", line 17, in __init__
+    self.validate_dates_test()
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\automatizer\src\frescures.py", line 45, in validate_dates_test
+    fechas = self.get_dates(frescuras_ejemplos)
+  File "C:\automatizer\src\frescures.py", line 38, in get_dates
+    fecha = frescure_to_date(valid)
+  File "C:\automatizer\utils\utils.py", line 21, in frescure_to_date
+    letra = frescure[0].upper()
+            ~~~~~~~~^^^
+IndexError: list index out of range
+frescures.py:37 src.frescures: VALIDOS: None
+main.py:40 __main__: Error en el proceso de generación del modelo: {e}
+Traceback (most recent call last):
+  File "C:\automatizer\main.py", line 36, in <module>
+    automatizer = Automatizer(SHELF_TIMES, PROJECT_ROOT)
+  File "C:\automatizer\src\frescures.py", line 17, in __init__
+    self.validate_dates_test()
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\automatizer\src\frescures.py", line 45, in validate_dates_test
+    fechas = self.get_dates(frescuras_ejemplos)
+  File "C:\automatizer\src\frescures.py", line 38, in get_dates
+    fecha = frescure_to_date(valid)
+  File "C:\automatizer\utils\utils.py", line 18, in frescure_to_date
+    for char in frescure:
+                ^^^^^^^^
+TypeError: 'NoneType' object is not iterable
+frescures.py:34 src.frescures: VALIDOS: None
+main.py:40 __main__: Error en el proceso de generación del modelo: {e}
+Traceback (most recent call last):
+  File "C:\automatizer\main.py", line 36, in <module>
+    automatizer = Automatizer(SHELF_TIMES, PROJECT_ROOT)
+  File "C:\automatizer\src\frescures.py", line 17, in __init__
+    self.validate_dates_test()
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\automatizer\src\frescures.py", line 35, in validate_dates_test
+    fecha = frescure_to_date(valid)
+  File "C:\automatizer\utils\utils.py", line 18, in frescure_to_date
+    for char in frescure:
+                ^^^^^^^^
+TypeError: 'NoneType' object is not iterable
+frescures.py:34 src.frescures: VALIDOS: None
+main.py:40 __main__: Error en el proceso de generación del modelo: {e}
+Traceback (most recent call last):
+  File "C:\automatizer\main.py", line 36, in <module>
+    automatizer = Automatizer(SHELF_TIMES, PROJECT_ROOT)
+  File "C:\automatizer\src\frescures.py", line 17, in __init__
+    self.validate_dates_test()
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\automatizer\src\frescures.py", line 35, in validate_dates_test
+    fecha = frescure_to_date(valid)
+  File "C:\automatizer\utils\utils.py", line 18, in frescure_to_date
+    for char in frescure:
+                ^^^^^^^^
+TypeError: 'NoneType' object is not iterable
+frescures.py:34 src.frescures: VALIDOS: None
+main.py:40 __main__: Error en el proceso de generación del modelo: {e}
+Traceback (most recent call last):
+  File "C:\automatizer\main.py", line 36, in <module>
+    automatizer = Automatizer(SHELF_TIMES, PROJECT_ROOT)
+  File "C:\automatizer\src\frescures.py", line 17, in __init__
+    self.validate_dates_test()
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\automatizer\src\frescures.py", line 35, in validate_dates_test
+    fecha = frescure_to_date(valid)
+  File "C:\automatizer\utils\utils.py", line 18, in frescure_to_date
+    for char in frescure:
+                ^^^^^^^^
+TypeError: 'NoneType' object is not iterable
+frescures.py:34 src.frescures: VALIDOS: None
+main.py:40 __main__: Error en el proceso de generación del modelo: {e}
+Traceback (most recent call last):
+  File "C:\automatizer\main.py", line 36, in <module>
+    automatizer = Automatizer(SHELF_TIMES, PROJECT_ROOT)
+  File "C:\automatizer\src\frescures.py", line 17, in __init__
+    self.validate_dates_test()
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\automatizer\src\frescures.py", line 35, in validate_dates_test
+    fecha = frescure_to_date(valid)
+  File "C:\automatizer\utils\utils.py", line 23, in frescure_to_date
+    mes = ord(letra) - ord("A") + 1  # A->1 ... L->12
+          ~~~^^^^^^^
+TypeError: ord() expected string of length 1, but builtin_function_or_method found
+frescures.py:34 src.frescures: VALIDOS: None
+main.py:40 __main__: Error en el proceso de generación del modelo: {e}
+Traceback (most recent call last):
+  File "C:\automatizer\main.py", line 36, in <module>
+    automatizer = Automatizer(SHELF_TIMES, PROJECT_ROOT)
+  File "C:\automatizer\src\frescures.py", line 17, in __init__
+    self.validate_dates_test()
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\automatizer\src\frescures.py", line 35, in validate_dates_test
+    fecha = frescure_to_date(valid)
+  File "C:\automatizer\utils\utils.py", line 26, in frescure_to_date
+    last_digit = int(frescure[3])
+ValueError: invalid literal for int() with base 10: 'e'
+frescures.py:34 src.frescures: VALIDOS: None
+main.py:40 __main__: Error en el proceso de generación del modelo: {e}
+Traceback (most recent call last):
+  File "C:\automatizer\main.py", line 36, in <module>
+    automatizer = Automatizer(SHELF_TIMES, PROJECT_ROOT)
+  File "C:\automatizer\src\frescures.py", line 17, in __init__
+    self.validate_dates_test()
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\automatizer\src\frescures.py", line 35, in validate_dates_test
+    fecha = frescure_to_date(valid)
+  File "C:\automatizer\utils\utils.py", line 26, in frescure_to_date
+    last_digit = int(frescure_list[2])
+                     ~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+frescures.py:34 src.frescures: VALIDOS: None
+main.py:40 __main__: Error en el proceso de generación del modelo: {e}
+Traceback (most recent call last):
+  File "C:\automatizer\main.py", line 36, in <module>
+    automatizer = Automatizer(SHELF_TIMES, PROJECT_ROOT)
+  File "C:\automatizer\src\frescures.py", line 17, in __init__
+    self.validate_dates_test()
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\automatizer\src\frescures.py", line 35, in validate_dates_test
+    fecha = frescure_to_date(valid)
+  File "C:\automatizer\utils\utils.py", line 26, in frescure_to_date
+    last_digit = frescure_list[2]
+                 ~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+frescures.py:34 src.frescures: VALIDOS: None
+main.py:40 __main__: Error en el proceso de generación del modelo: {e}
+Traceback (most recent call last):
+  File "C:\automatizer\main.py", line 36, in <module>
+    automatizer = Automatizer(SHELF_TIMES, PROJECT_ROOT)
+  File "C:\automatizer\src\frescures.py", line 17, in __init__
+    self.validate_dates_test()
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\automatizer\src\frescures.py", line 35, in validate_dates_test
+    fecha = frescure_to_date(valid)
+  File "C:\automatizer\utils\utils.py", line 28, in frescure_to_date
+    last_digit = frescure_list[2]
+                 ~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+frescures.py:34 src.frescures: VALIDOS: None
+main.py:40 __main__: Error en el proceso de generación del modelo: {e}
+Traceback (most recent call last):
+  File "C:\automatizer\main.py", line 36, in <module>
+    automatizer = Automatizer(SHELF_TIMES, PROJECT_ROOT)
+  File "C:\automatizer\src\frescures.py", line 17, in __init__
+    self.validate_dates_test()
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\automatizer\src\frescures.py", line 35, in validate_dates_test
+    fecha = frescure_to_date(valid)
+  File "C:\automatizer\utils\utils.py", line 28, in frescure_to_date
+    last_digit = frescure_list[2]
+                 ~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+frescures.py:34 src.frescures: VALIDOS: None
+main.py:40 __main__: Error en el proceso de generación del modelo: {e}
+Traceback (most recent call last):
+  File "C:\automatizer\main.py", line 36, in <module>
+    automatizer = Automatizer(SHELF_TIMES, PROJECT_ROOT)
+  File "C:\automatizer\src\frescures.py", line 17, in __init__
+    self.validate_dates_test()
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\automatizer\src\frescures.py", line 35, in validate_dates_test
+    fecha = frescure_to_date(valid)
+  File "C:\automatizer\utils\utils.py", line 28, in frescure_to_date
+    last_digit = frescure_list[2]
+                 ~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+frescures.py:34 src.frescures: VALIDAS: None
+frescures.py:34 src.frescures: VALIDAS: <re.Match object; span=(0, 4), match='L315'>
+frescures.py:34 src.frescures: VALIDAS: <re.Match object; span=(0, 4), match='F135'>
+frescures.py:34 src.frescures: VALIDAS: <re.Match object; span=(0, 4), match='J265'>
+frescures.py:34 src.frescures: VALIDAS: None
+main.py:38 __main__: Proceso terminado correctamente.
+frescures.py:33 src.frescures: VALIDAS: None
+main.py:40 __main__: Error en el proceso de generación del modelo: {e}
+Traceback (most recent call last):
+  File "C:\automatizer\main.py", line 36, in <module>
+    automatizer = Automatizer(SHELF_TIMES, PROJECT_ROOT)
+  File "C:\automatizer\src\frescures.py", line 17, in __init__
+    self.validate_dates_test()
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\automatizer\src\frescures.py", line 38, in validate_dates_test
+    fecha = frescure_to_date(valid)
+  File "C:\automatizer\utils\utils.py", line 28, in frescure_to_date
+    last_digit = frescure_list[2]
+                 ~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+frescures.py:22 src.frescures: FRESCURAS:      CODIGO                                 DESCRIPCION  SHELF LIFE
+0    3000003         CORONA EXTRA BOTE H-C 24/355 ML CT         360
+1    3000022           VICTORIA MEGA 12/1.2 L CT R LISA         360
+2    3000050  PACIFICO LIGHT BOTE 8 PK H- C 24/355ML CT         365
+3    3000060               BUDWEISER BOTE 6 PK 24/12 OZ         365
+4    3000061               BUDWEISER 6 PACK 24/12 OZ CM         365
+..       ...                                        ...         ...
+235  3018199    PACIFICO SUAVE BOTE 4PKH-C 24/473 ML CT         360
+236  3018347  Victoria Chamoy bote 6 pack 21/473 ML MAQ         360
+237  3018373        CORONITA CERO 24 PACK 24/2130 ML NR         360
+238  3018427            Negra Modelo Cero 6pk 12/355 NR         180
+239  3018438     MODELO DORADA CERO 6 PACK 12/355 ML NR         180
+
+[240 rows x 3 columns]
+frescures.py:33 src.frescures: VALIDAS: None
+main.py:40 __main__: Error en el proceso de generación del modelo: {e}
+Traceback (most recent call last):
+  File "C:\automatizer\main.py", line 36, in <module>
+    automatizer = Automatizer(SHELF_TIMES, PROJECT_ROOT)
+  File "C:\automatizer\src\frescures.py", line 17, in __init__
+    self.validate_dates_test()
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\automatizer\src\frescures.py", line 35, in validate_dates_test
+    fecha = frescure_to_date(valid)
+  File "C:\automatizer\utils\utils.py", line 28, in frescure_to_date
+    last_digit = frescure_list[2]
+                 ~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+frescures.py:35 src.frescures: VALIDAS: None
+main.py:40 __main__: Error en el proceso de generación del modelo: {e}
+Traceback (most recent call last):
+  File "C:\automatizer\main.py", line 36, in <module>
+    automatizer = Automatizer(SHELF_TIMES, PROJECT_ROOT)
+  File "C:\automatizer\src\frescures.py", line 17, in __init__
+    self.validate_dates_test()
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\automatizer\src\frescures.py", line 37, in validate_dates_test
+    fecha = frescure_to_date(valid)
+  File "C:\automatizer\utils\utils.py", line 28, in frescure_to_date
+    last_digit = frescure_list[2]
+                 ~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+frescures.py:35 src.frescures: VALIDAS: None
+main.py:40 __main__: Error en el proceso de generación del modelo: {e}
+Traceback (most recent call last):
+  File "C:\automatizer\main.py", line 36, in <module>
+    automatizer = Automatizer(SHELF_TIMES, PROJECT_ROOT)
+  File "C:\automatizer\src\frescures.py", line 17, in __init__
+    self.validate_dates_test()
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\automatizer\src\frescures.py", line 37, in validate_dates_test
+    fecha = frescure_to_date(valid)
+  File "C:\automatizer\utils\utils.py", line 28, in frescure_to_date
+    last_digit = frescure_list[2]
+                 ~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+frescures.py:35 src.frescures: VALIDAS: <re.Match object; span=(0, 4), match='L315'>
+main.py:40 __main__: Error en el proceso de generación del modelo: {e}
+Traceback (most recent call last):
+  File "C:\automatizer\main.py", line 36, in <module>
+    automatizer = Automatizer(SHELF_TIMES, PROJECT_ROOT)
+  File "C:\automatizer\src\frescures.py", line 17, in __init__
+    self.validate_dates_test()
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\automatizer\src\frescures.py", line 37, in validate_dates_test
+    fecha = frescure_to_date(valid)
+  File "C:\automatizer\utils\utils.py", line 34, in frescure_to_date
+    year = decade_start + last_digit
+           ~~~~~~~~~~~~~^~~~~~~~~~~~
+TypeError: unsupported operand type(s) for +: 'int' and 'str'
+frescures.py:35 src.frescures: VALIDAS: L315
+main.py:40 __main__: Error en el proceso de generación del modelo: {e}
+Traceback (most recent call last):
+  File "C:\automatizer\main.py", line 36, in <module>
+    automatizer = Automatizer(SHELF_TIMES, PROJECT_ROOT)
+  File "C:\automatizer\src\frescures.py", line 17, in __init__
+    self.validate_dates_test()
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\automatizer\src\frescures.py", line 37, in validate_dates_test
+    fecha = frescure_to_date(valid)
+  File "C:\automatizer\utils\utils.py", line 34, in frescure_to_date
+    year = decade_start + last_digit
+           ~~~~~~~~~~~~~^~~~~~~~~~~~
+TypeError: unsupported operand type(s) for +: 'int' and 'str'
+frescures.py:35 src.frescures: VALIDAS: L315
+main.py:40 __main__: Error en el proceso de generación del modelo: {e}
+Traceback (most recent call last):
+  File "C:\automatizer\main.py", line 36, in <module>
+    automatizer = Automatizer(SHELF_TIMES, PROJECT_ROOT)
+  File "C:\automatizer\src\frescures.py", line 17, in __init__
+    self.validate_dates_test()
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\automatizer\src\frescures.py", line 37, in validate_dates_test
+    fecha = frescure_to_date(frescuras)
+  File "C:\automatizer\utils\utils.py", line 34, in frescure_to_date
+    year = decade_start + last_digit
+           ~~~~~~~~~~~~~^~~~~~~~~~~~
+TypeError: unsupported operand type(s) for +: 'int' and 'str'
+frescures.py:35 src.frescures: VALIDAS: L315
+main.py:40 __main__: Error en el proceso de generación del modelo: {e}
+Traceback (most recent call last):
+  File "C:\automatizer\main.py", line 36, in <module>
+    automatizer = Automatizer(SHELF_TIMES, PROJECT_ROOT)
+  File "C:\automatizer\src\frescures.py", line 17, in __init__
+    self.validate_dates_test()
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\automatizer\src\frescures.py", line 37, in validate_dates_test
+    fecha = frescure_to_date(frescuras)
+  File "C:\automatizer\utils\utils.py", line 33, in frescure_to_date
+    year = decade_start + last_digit
+           ~~~~~~~~~~~~~^~~~~~~~~~~~
+TypeError: unsupported operand type(s) for +: 'int' and 'str'
+frescures.py:35 src.frescures: VALIDAS: L315
+main.py:40 __main__: Error en el proceso de generación del modelo: {e}
+Traceback (most recent call last):
+  File "C:\automatizer\main.py", line 36, in <module>
+    automatizer = Automatizer(SHELF_TIMES, PROJECT_ROOT)
+  File "C:\automatizer\src\frescures.py", line 17, in __init__
+    self.validate_dates_test()
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\automatizer\src\frescures.py", line 37, in validate_dates_test
+    fecha = frescure_to_date(frescuras)
+  File "C:\automatizer\utils\utils.py", line 35, in frescure_to_date
+    dt = datetime(year, mes, dia)
+TypeError: 'list' object cannot be interpreted as an integer
+frescures.py:35 src.frescures: VALIDAS: L315
+main.py:40 __main__: Error en el proceso de generación del modelo: {e}
+Traceback (most recent call last):
+  File "C:\automatizer\main.py", line 36, in <module>
+    automatizer = Automatizer(SHELF_TIMES, PROJECT_ROOT)
+  File "C:\automatizer\src\frescures.py", line 17, in __init__
+    self.validate_dates_test()
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\automatizer\src\frescures.py", line 37, in validate_dates_test
+    fecha = frescure_to_date(frescuras)
+  File "C:\automatizer\utils\utils.py", line 35, in frescure_to_date
+    dt = datetime(year, mes, dia)
+TypeError: 'list' object cannot be interpreted as an integer
+frescures.py:35 src.frescures: VALIDAS: L315
+main.py:40 __main__: Error en el proceso de generación del modelo: {e}
+Traceback (most recent call last):
+  File "C:\automatizer\main.py", line 36, in <module>
+    automatizer = Automatizer(SHELF_TIMES, PROJECT_ROOT)
+  File "C:\automatizer\src\frescures.py", line 17, in __init__
+    self.validate_dates_test()
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\automatizer\src\frescures.py", line 37, in validate_dates_test
+    fecha = frescure_to_date(frescuras)
+  File "C:\automatizer\utils\utils.py", line 35, in frescure_to_date
+    dt = datetime(year, mes, dia)
+TypeError: 'str' object cannot be interpreted as an integer
+frescures.py:35 src.frescures: VALIDAS: L315
+main.py:40 __main__: Error en el proceso de generación del modelo: {e}
+Traceback (most recent call last):
+  File "C:\automatizer\main.py", line 36, in <module>
+    automatizer = Automatizer(SHELF_TIMES, PROJECT_ROOT)
+  File "C:\automatizer\src\frescures.py", line 17, in __init__
+    self.validate_dates_test()
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\automatizer\src\frescures.py", line 37, in validate_dates_test
+    fecha = frescure_to_date(frescuras)
+  File "C:\automatizer\utils\utils.py", line 28, in frescure_to_date
+    dia = int(frescure_list[1:2])
+TypeError: int() argument must be a string, a bytes-like object or a real number, not 'list'
+frescures.py:35 src.frescures: VALIDAS: L315
+frescures.py:38 src.frescures: FECHAS: 01/12/2025
+frescures.py:35 src.frescures: VALIDAS: F135
+frescures.py:38 src.frescures: FECHAS: 03/06/2025
+frescures.py:35 src.frescures: VALIDAS: J265
+frescures.py:38 src.frescures: FECHAS: 06/10/2025
+main.py:38 __main__: Proceso terminado correctamente.
+frescures.py:35 src.frescures: VALIDAS: L315
+frescures.py:38 src.frescures: FECHAS: 
+frescures.py:35 src.frescures: VALIDAS: F135
+frescures.py:38 src.frescures: FECHAS: 
+frescures.py:35 src.frescures: VALIDAS: J265
+frescures.py:38 src.frescures: FECHAS: 
+main.py:38 __main__: Proceso terminado correctamente.
+frescures.py:35 src.frescures: VALIDAS: L315
+frescures.py:38 src.frescures: FECHAS: 
+frescures.py:35 src.frescures: VALIDAS: F135
+frescures.py:38 src.frescures: FECHAS: 
+frescures.py:35 src.frescures: VALIDAS: J265
+frescures.py:38 src.frescures: FECHAS: 
+main.py:38 __main__: Proceso terminado correctamente.
+frescures.py:35 src.frescures: VALIDAS: L315
+frescures.py:38 src.frescures: FECHAS: 
+frescures.py:35 src.frescures: VALIDAS: F135
+frescures.py:38 src.frescures: FECHAS: 
+frescures.py:35 src.frescures: VALIDAS: J265
+frescures.py:38 src.frescures: FECHAS: 
+main.py:38 __main__: Proceso terminado correctamente.
+frescures.py:35 src.frescures: VALIDAS: L315
+frescures.py:38 src.frescures: FECHAS: 01/12/2025
+frescures.py:35 src.frescures: VALIDAS: F135
+frescures.py:38 src.frescures: FECHAS: 03/06/2025
+frescures.py:35 src.frescures: VALIDAS: J265
+frescures.py:38 src.frescures: FECHAS: 06/10/2025
+main.py:38 __main__: Proceso terminado correctamente.

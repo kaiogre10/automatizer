@@ -1,0 +1,48 @@
+import re
+from typing import Pattern, List
+from datetime import datetime
+
+def validate_frescures(pattern: Pattern[str], text: str) -> bool:
+    valid_format = re.fullmatch(pattern, text)
+    if valid_format:
+        return True
+    else:
+        return False
+
+def frescure_to_date(frescure: str) -> str:
+    """
+    Convierte un STR validado A000 en fecha:
+        - letra A-L -> mes 1-12
+        - posiciones [1:3] -> día (01-31)
+        - último dígito -> año dentro de la década (por ejemplo '5' -> 2025)
+    Devuelve la fecha en formato 'DD/MM/YYYY'.
+    """
+    frescure_list: List[str] = []
+    for char in frescure:
+        if char.isalpha():
+            frescure_list.append(char)
+        elif char.isdigit():
+            frescure_list.append(char)
+
+    dia1 = frescure_list[1]
+    dia2 = frescure_list[2]
+    dia = int(dia1.join(dia2))
+    mes = ord(frescure_list[0]) - ord("A") + 1  # A->1 ... L->12
+    last_digit = int(frescure_list[3])
+    ref =  datetime.now().year
+    decade_start = (ref // 10) * 10
+    year = decade_start + last_digit
+
+    if dia >= 32:
+        print("Mal dia")
+        return ""
+    elif mes >= 13:
+        print("Mal mes")
+        return ""
+    elif 2024 >= ref:
+        print("Mal año")
+        return ""
+    else:    
+        dt = datetime(year, mes, dia)
+        
+        return dt.strftime("%d/%m/%Y")
