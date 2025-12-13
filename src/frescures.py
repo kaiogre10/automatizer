@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime, timedelta
+import time
 from typing import List, Dict
 import numpy as np
 import re
@@ -10,12 +11,15 @@ logger = logging.getLogger(__name__)
 
 class Automatizer:
     def __init__(self, shelf_time_path: str, project_root: str):
+        t0 = time.perf_counter()
         self.project_root = project_root
         self.frescures_pattern = re.compile(r'^[A-L](0[1-9]|1[0-9]|2[0-9]|3[0-1])[0-9]$')
         self.shelf_table = self.load_data(shelf_time_path)
         self.get_dates(self.shelf_table)
+        logger.info(f"Proceso completado en: {time.perf_counter() - t0:.6f}")
 
-    def load_data(self, shelf_time_table: str) -> pd.DataFrame:        
+    def load_data(self, shelf_time_table: str) -> pd.DataFrame:
+        
         try:
             DF_DIAS = pd.read_csv(shelf_time_table, encoding='utf-8')
             # logger.info(f"FRESCURAS: {DF_DIAS}")
@@ -56,8 +60,6 @@ class Automatizer:
             sku = frescure[0]
             codigo_frescura = frescure[1]
             fecha_base =  datetime.strptime(frescure[2], "%d/%m/%Y")
-            logger.info(f"{type(fecha_base)}")
-
             # Buscar shelf life por SKU (columna CODIGO en CSV)
             # Normalizar tipos: CODIGO suele ser numérico, convertir sku a int si es posible
             try:
