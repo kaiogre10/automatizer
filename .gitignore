@@ -1,0 +1,48 @@
+# Ignorar carpetas
+__pycache__/
+.pytest_cache/
+.cache/
+.pyc/
+.png/
+.txt/
+.log/
+.ini/
+.vscode/
+.idea/
+.cursor/
+.github/
+.github/chatmodes/
+.typings/
+.idea/
+
+# Ignorar carpeta
+.github/
+documentation/
+test/
+tools/
+data/
+input/
+input2/
+output/
+input3/
+logs/
+.txt/
+
+# Ignorar cualquier archivo .ini
+*.ini
+*.txt
+*.png
+*.jpg
+*.jpeg
+*.pkl
+*.pdf
+
+# Ignorar perfectocr.txt
+*.cursorignore
+*cursorignore/
+cursorignore
+*perfectocr.txt
+perfectocr.txt/
+
+# secrets
+.env

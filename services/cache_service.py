@@ -6,12 +6,15 @@ from typing import List
 
 logger = logging.getLogger(__name__)
 
-def clear_output_folders(output_paths: List[str]) -> None:
+def clear_output_folders(output_paths: List[str], temp_path: str):
     """Vacia las carpetas de salida definidas en la config y cuenta los eliminados."""
     deleted_files = 0
-    deleted_folder = 0
+    deleted_folder = 0    
 
     logger.debug("Limpieza Inicial: Vaciando carpetas de salida")
+
+    output_paths.append(temp_path)
+    
     for folder_path in output_paths:
         if not os.path.isdir(folder_path):
             continue
@@ -54,8 +57,7 @@ def cleanup_project_cache(project_root: str):
     try:
         for dirpath, dirnames, filenames in os.walk(project_root):
             for d in list(dirnames):
-                if d == "__pycache__":
-                    
+                if d == "__pycache__":    
                     try:
                         cache_path = os.path.join(dirpath, d)
                         shutil.rmtree(cache_path)
@@ -69,7 +71,7 @@ def cleanup_project_cache(project_root: str):
             filename: str
             file_path: str
             for filename in filenames:
-                if filename.endswith(('.pyc', '.pyo')):
+                if filename.endswith(('.pyc', '.pyo', '.png', ".pycache", ".pdf")):
                     file_path = os.path.join(dirpath, filename)
                     os.remove(file_path)
                     logger.debug(f"Eliminado archivo de caché: {file_path}")
