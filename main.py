@@ -9,7 +9,6 @@ from datetime import datetime, timedelta
 from typing import List, Dict, Any
 from src.frescures import Frescurer
 from src.barcoder import Barcoder
-from services.cache_service import clear_output_folders
 from utils.utils import validate_frescures, validate_sku, frescure_to_date
 
 logger = logging.getLogger(__name__)
@@ -28,7 +27,6 @@ class AppGeneradorCP:
             return os.path.join(base_path, relative_path)
 
         self.project_root = resource_path(".")
-        self.shelf_times_path = resource_path(os.path.join("data", "frescuras.csv"))
         self.template_path = resource_path(os.path.join("data", "plantilla.xlsx"))
         
         # Rutas de salida (fuera del exe)
@@ -39,12 +37,11 @@ class AppGeneradorCP:
 
         self.output_path = os.path.join(application_path, "output")
         self.temp_path = os.path.join(application_path, "temp_img")
-        
-        self.default_output = self.output_path
-        self.output_path_var = tk.StringVar(value=self.default_output)
+
+        self.output_path_var = tk.StringVar(value=self.output_path)
+        self.input_path_var = tk.StringVar(value="")
 
         # --- Datos y Variables ---
-        self.shelf_data = self._load_shelf_data()
         self.frescures_pattern = re.compile(r'^[A-L](0[1-9]|1[0-9]|2[0-9]|3[0-1])[0-9]$')
         self.rows_data: List[Dict[str, Any]] = []
         self.mode_var = tk.StringVar(value="frescuras")
@@ -52,37 +49,58 @@ class AppGeneradorCP:
         # ==========================================================
         # SECCIÓN 1: Configuración Superior
         # ==========================================================
-        top_frame = tk.Frame(master, padx=10, pady=10)
-        top_frame.grid(row=0, column=0, sticky="ew")
-        
-        tk.Label(top_frame, text="Carpeta Salida:", font=('Arial', 9, 'bold')).pack(side="left")
-        tk.Entry(top_frame, textvariable=self.output_path_var, width=35, state="readonly").pack(side="left", padx=5)
-        tk.Button(top_frame, text="📂", command=self._select_output_folder).pack(side="left")
 
-        mode_frame = tk.LabelFrame(master, text="Tipo de Documento", padx=10, pady=5)
+        top_frame = tk.Frame(master, background="",padx=10, pady=10)
+        top_frame.grid(row=0, column=0, sticky="ew")
+
+        tk.Label(top_frame, text="Cargar archivo:", font=('Arial', 9)).pack(side="left")
+        tk.Entry(top_frame, textvariable=self.input_path_var, width=15, state="readonly").pack(side="left", padx=1)
+        tk.Button(top_frame, text="📂", command=self._select_input_file).pack(side="left", padx=1)
+
+        # Espaciador flexible en el medio
+        tk.Label(top_frame, text="  ").pack(side="left", expand=True)
+
+        tk.Label(top_frame, text="Carpeta de salida:", font=('Arial', 9)).pack(side="left")
+        tk.Entry(top_frame, textvariable=self.output_path_var, width=15, state="readonly").pack(side="left", padx=5)
+        tk.Button(top_frame, text="📂", command=self._select_output_folder).pack(side="left", padx=5)
+
+        mode_frame = tk.LabelFrame(master, text="Tipo de documento:", padx=10, pady=5)
         mode_frame.grid(row=1, column=0, padx=10, sticky="ew")
         
-        tk.Radiobutton(mode_frame, text="Hojas de Consumo ", variable=self.mode_var, value="frescuras", command=self._on_mode_change).pack(side="left", padx=20)
-        tk.Radiobutton(mode_frame, text="Códigos de Barra", variable=self.mode_var, value="barcodes", command=self._on_mode_change).pack(side="left", padx=20)
-
+        tk.Radiobutton(mode_frame, text="Hojas de Consumo Preferente", variable=self.mode_var, value="frescuras", command=self._on_mode_change).pack(side="left", padx=20)
+        tk.Radiobutton(mode_frame, text="Código de Barras", variable=self.mode_var, value="barcodes", command=self._on_mode_change).pack(side="left", padx=20)
+        
         # ==========================================================
         # SECCIÓN 2: Encabezados
         # ==========================================================
+
         self.header_frame = tk.Frame(master, bg="#ddd", pady=5)
         self.header_frame.grid(row=2, column=0, padx=10, sticky="ew")
-        self.header_frame.columnconfigure(3, weight=1)
+        self.header_frame.columnconfigure(4, weight=1)
 
-        self.W_COL1 = 12
-        self.W_COL2 = 12
-        self.W_COL3 = 7
+        self.col_idx = 5
+        self.W_COL1 = 10
+        self.W_COL2 = 10
+        self.W_COL3 = 12
         
-        tk.Label(self.header_frame, text="SKU", width=self.W_COL1, bg="#ddd", font=('Arial', 9, 'bold')).grid(row=0, column=0)
-        tk.Label(self.header_frame, text="Frescura", width=self.W_COL2, bg="#ddd", font=('Arial', 9, 'bold')).grid(row=0, column=1)
-        tk.Label(self.header_frame, text="Copias", width=self.W_COL3, bg="#ddd", font=('Arial', 9, 'bold')).grid(row=0, column=2)
-        tk.Label(self.header_frame, text="Información", bg="#ddd", font=('Arial', 9, 'bold'), anchor="w").grid(row=0, column=3, sticky="w", padx=10)
+        # Columna índice
+        self.header_index = tk.Label(self.header_frame, text="Num", width=self.col_idx, bg="#ddd", font=('Arial', 9, 'bold'))
+        self.header_index.grid(row=0, column=0)
+
+        # Guardamos referencias a los labels de encabezado
+        self.header_sku = tk.Label(self.header_frame, text="SKU", width=self.W_COL1, bg="#ddd", font=('Arial', 9, 'bold'))
+        self.header_sku.grid(row=0, column=1)
+
+        self.header_frescura = tk.Label(self.header_frame, text="Frescura", width=self.W_COL2, bg="#ddd", font=('Arial', 9, 'bold'))
+        self.header_frescura.grid(row=0, column=2)
+
+        self.header_copias = tk.Label(self.header_frame, text="Copias", width=self.W_COL3, bg="#ddd", font=('Arial', 9, 'bold'))
+        self.header_copias.grid(row=0, column=3)
+
+        tk.Label(self.header_frame, text="Info", bg="#ddd", font=('Arial', 9, 'bold'), anchor="w").grid(row=0, column=4, sticky="w", padx=15.0)
 
         # ==========================================================
-        # SECCIÓN 3: Área de Entrada con Scroll (FIXED)
+        # SECCIÓN 3: Área de Entrada con Scroll
         # ==========================================================
 
         self.canvas_frame = tk.Frame(master, borderwidth=1, relief="sunken")
@@ -116,6 +134,8 @@ class AppGeneradorCP:
         self.control_frame = tk.Frame(master, pady=10)
         self.control_frame.grid(row=4, column=0, sticky="ew", padx=10)
 
+        # tk.Button(self.control_frame, text="-", command=self.add_new_row, bg="#e3f2fd").pack(side="left", padx=5)
+        # tk.Button(self.control_frame, text="+", command=self.add_new_row, bg="#e3f2fd").pack(side="left", padx=5)
         tk.Button(self.control_frame, text="Añadir Fila", command=self.add_new_row, bg="#e3f2fd").pack(side="left", padx=5)
         tk.Button(self.control_frame, text="Limpiar", command=self._clear_all_rows).pack(side="left", padx=5)
         tk.Button(self.control_frame, text="GENERAR", command=self.execute_generation, bg='#2e7d32', fg='white', font=('Arial', 10, 'bold'), height=2).pack(side="right", padx=10)
@@ -139,7 +159,7 @@ class AppGeneradorCP:
     # --- Lógica de Negocio ---
     def _load_shelf_data(self) -> pd.DataFrame:
         try:
-            if os.path.exists(self.shelf_times_path):
+            if self.shelf_times_path and os.path.exists(self.shelf_times_path):
                 df = pd.read_csv(self.shelf_times_path)
                 df['CODIGO'] = df['CODIGO'].astype(str).str.strip()
                 return df
@@ -154,54 +174,124 @@ class AppGeneradorCP:
 
     def _on_mode_change(self):
         mode = self.mode_var.get()
-        # Resetear headers (opcional) y limpiar
+        # Actualizar encabezados
+        if mode == "barcodes":
+            self.header_sku.config(text="Texto")
+            # Ocultar encabezado de frescura
+            self.header_frescura.grid_remove()
+        else:
+            self.header_sku.config(text="SKU")
+            # Mostrar encabezado de frescura
+            self.header_frescura.grid()
+        # Limpiar filas y crear una nueva con el modo actual
         self._clear_all_rows()
-
+    
     def add_new_row(self):
         row_frame = tk.Frame(self.input_frame)
         row_frame.pack(fill="x", pady=2)
+
+        # Índice de la fila (1‑based)
+        row_index = len(self.rows_data) + 1
+        self.lbl_index = tk.Label(row_frame, text=str(row_index), width=3, anchor="center")
+        self.lbl_index.grid(row=0, column=0, padx=2)
         
-        entry_sku = tk.Entry(row_frame, width=self.W_COL1 + 2)
-        entry_sku.grid(row=0, column=0, padx=2)
+        self.entry_sku = tk.Entry(row_frame, width=self.W_COL1 + 2, justify="center")
+        self.entry_sku.grid(row=0, column=1, padx=2)
         
-        entry_frescura = tk.Entry(row_frame, width=self.W_COL2 + 2)
-        entry_frescura.grid(row=0, column=1, padx=2)
+        self.entry_frescura = tk.Entry(row_frame, width=self.W_COL2 + 2, justify="center")
+        self.entry_frescura.grid(row=0, column=2, padx=2)
         
-        entry_cant = tk.Entry(row_frame, width=self.W_COL3 + 2, justify="center")
-        entry_cant.insert(0, "1")
-        entry_cant.grid(row=0, column=2, padx=2)
+        # Campo de copias
+        self.entry_cant = tk.Entry(row_frame, width=self.W_COL3 + 2, justify="center")
+        self.entry_cant.insert(0, 0)
+        self.entry_cant.grid(row=0, column=3, padx=(2, 0))
+
+        # Botón "-" para restar una copia (mínimo 1)
+        btn_menos = tk.Button(
+            row_frame,
+            text="-",
+            width=2,
+            command=lambda e=self.entry_cant: self._ajustar_copias(e, -1)
+        )
+        btn_menos.grid(row=0, column=4, padx=1)
+
+        # Botón "+" para sumar una copia
+        btn_mas = tk.Button(
+            row_frame,
+            text="+",
+            width=2,
+            command=lambda e=self.entry_cant: self._ajustar_copias(e, +1)
+        )
+        btn_mas.grid(row=0, column=5, padx=(1, 4))
         
-        lbl_status = tk.Label(row_frame, text="Ingrese datos", fg="black", anchor="w")
-        lbl_status.grid(row=0, column=3, padx=10, sticky="ew")
+        self.lbl_status = tk.Label(row_frame, text="Ingrese datos", fg="black", anchor="w", justify="center")
+        self.lbl_status.grid(row=0, column=6, padx=10, sticky="ew")
         
         # Configurar columnas del row_frame para que el status ocupe el resto
-        row_frame.columnconfigure(3, weight=1)
+        row_frame.columnconfigure(6, weight=1)
 
-        row_data = {'frame': row_frame, 'sku': entry_sku, 'frescura': entry_frescura, 'cantidad': entry_cant, 'status': lbl_status}
+        row_data: Dict[str, Any] = {
+            'frame': row_frame,
+            'index_lbl': self.lbl_index,
+            'sku': self.entry_sku,
+            'frescura': self.entry_frescura,
+            'copias': self.entry_cant,
+            'status': self.lbl_status
+        }
         
         # Bindings para cálculo en tiempo real
-        entry_sku.bind("<KeyRelease>", lambda e: self._calculate_preview(row_data))
-        entry_frescura.bind("<KeyRelease>", lambda e: self._calculate_preview(row_data))
+        self.entry_sku.bind("<KeyRelease>", lambda e: self._calculate_preview(row_data))
+        self.entry_frescura.bind(
+            "<KeyRelease>",
+            lambda e, r=row_data: (self._force_upper(e.widget), self._calculate_preview(r))
+        )
         
-        if self.mode_var.get() == "barcodes":
-            entry_frescura.config(state="disabled", bg="#f0f0f0")
+        # Ajustar la columna Frescura según el modo
+         
+        if self.mode_var.get() == "frescuras" and not self.input_path_var.get():
+            self.entry_frescura.config(state="readonly", fg="gray", bg=self.canvas_frame.cget("bg"))
+            self.entry_sku.config(state="readonly", fg="gray", bg=self.canvas_frame.cget("bg"))
+            self.entry_cant.config(state="readonly", fg="gray", bg=self.canvas_frame.cget("bg"))
+            self.lbl_status.config(text="NO SE HAN CARGADO FRESCURAS", font="bold", fg="red")
+
+        elif self.mode_var.get() == "barcodes":
+            # Hacer el entry de frescura casi invisible / inútil
+            self.entry_frescura.config(state="disabled", width=1, bg=self.canvas_frame.cget("bg"), relief="flat")
+            self.entry_frescura.grid_remove()
+        else:
+            self.entry_frescura.config(state="normal", width=self.W_COL2 + 2, bg="white", relief="sunken")
+            self.entry_frescura.grid(row=0, column=2, padx=2)
         
         self.rows_data.append(row_data)
+
+    def _force_upper(self, widget: tk.Entry):
+        current = widget.get()
+        upper = current.upper()
+        if current != upper:
+            pos = widget.index(tk.INSERT)
+            widget.delete(0, tk.END)
+            widget.insert(0, upper)
+            widget.icursor(pos)
 
     def _calculate_preview(self, row):
         """ Lógica para mostrar descripción o cálculo completo """
         mode = self.mode_var.get()
-        sku_val = row['sku'].get().strip()
+        sku_val: str = row['sku'].get().strip()
         frescura_val: str = row['frescura'].get().strip().upper()
         status_lbl = row['status']
+         
+        # Si estamos en modo frescuras y no hay CSV cargado válido
+        if mode == "frescuras" and (self.shelf_data is None or self.shelf_data.empty):
+            
+            status_lbl.config(text="Cargue primero un archivo CSV válido.", fg="gray")
+            return
         
-        # Caso base: Vacío
         if not sku_val:
-            status_lbl.config(text="Ingresse datos...", fg="gray")
+            status_lbl.config(text="Ingrese datos", fg="gray")
             return
         
         if mode == "barcodes":
-            status_lbl.config(text="Ingrese texto para corregir código de barras", fg="gray")
+            status_lbl.config(text="Ingrese texto para código de barras", fg="gray")
             return
 
         # 1. Validar SKU numéricamente
@@ -247,6 +337,47 @@ class AppGeneradorCP:
         except Exception as e:
             status_lbl.config(text=f"Error cálculo: {e}", fg="red")
 
+    def _ajustar_copias(self, entry: tk.Entry, delta: int):
+        """Suma o resta copias, manteniendo el valor en el rango 1–50."""
+        try:
+            val = int(entry.get())
+        except ValueError:
+            val = 1
+
+        val += delta
+
+        # Limitar entre 1 y 50
+        if val < 1:
+            val = 1
+        if val > 50:
+            val = 50
+
+        entry.delete(0, tk.END)
+        entry.insert(0, str(val))
+    
+    def _select_input_file(self):
+        """Permite elegir el CSV y lo carga solo cuando el usuario lo selecciona."""
+        file_path = filedialog.askopenfilename(
+            title="Seleccionar archivo de frescuras",
+            filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
+        )
+        if not file_path:
+            return  # Usuario canceló
+
+        # Actualizar ruta y cargar datos
+        self.input_path_var.set(file_path)
+        self.shelf_times_path = file_path  # Usar este CSV en el resto de la app
+
+        self.shelf_data = self._load_shelf_data()
+        if self.shelf_data.empty:
+            messagebox.showwarning("Advertencia", "No se pudieron cargar datos del archivo seleccionado.")
+        else:
+            self.entry_frescura.config(state="normal")
+            self.entry_sku.config(state="normal")
+            self.entry_cant.config(state="normal")
+            self.lbl_status.config(state="active", text="Ingrese datos", fg="black", anchor="w", justify="center")
+            messagebox.showinfo("Información", "Archivo cargado correctamente.")
+
     def _clear_all_rows(self):
         for row in self.rows_data:
             row['frame'].destroy()
@@ -255,8 +386,11 @@ class AppGeneradorCP:
 
     def execute_generation(self):
         mode = self.mode_var.get()
+        if not mode:
+            return
+        
         output_folder = self.output_path_var.get()
-        query = []
+        query: List[List[str]] = []
         
         if not os.path.exists(output_folder):
             try:
@@ -277,7 +411,7 @@ class AppGeneradorCP:
                 if cantidad < 1: cantidad = 1
             except: cantidad = 1
 
-            if mode == "frescuras":
+            if mode == "frescuras" :
                 if validate_sku(v1) and validate_frescures(self.frescures_pattern, v2.upper()):
                     # Multiplicar filas (lógica de copias)
                     for _ in range(cantidad):
@@ -307,7 +441,7 @@ def main():
     root.title("Generador de Etiquetas")
     
     # Centrar ventana
-    w, h = 550, 480
+    w, h = 650, 480
     ws, hs = root.winfo_screenwidth(), root.winfo_screenheight()
     x, y = (ws/2) - (w/2), (hs/2) - (h/2)
     root.geometry('%dx%d+%d+%d' % (w, h, x, y))
