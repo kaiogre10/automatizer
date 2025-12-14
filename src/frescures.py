@@ -34,7 +34,7 @@ class Frescurer:
         complete_frescures: List[List[str]] = []
         for frescuras in all_frescuras:
             if not validate_frescures(self.frescures_pattern, frescuras[1]) or not validate_sku(frescuras[0]):
-                logger.warning(f"Query no váida '{frescuras}'")
+                # logger.warning(f"Query no váida '{frescuras}'")
                 continue
                         
             fecha = frescure_to_date(frescuras[1])

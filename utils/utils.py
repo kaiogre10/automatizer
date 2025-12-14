@@ -12,9 +12,12 @@ def validate_text(text: str) -> bool:
         return False
     
 def validate_frescures(pattern: Pattern[str], text: str) -> bool:
-    text = text.strip()
+    valid_chars = {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"}
+    list_text = text.split()
+    valid = not valid_chars.isdisjoint(list_text)
     valid_format = re.fullmatch(pattern, text)
-    if len(text) != 4 or valid_format is None or not text.isalnum():
+
+    if valid or len(text) != 4 or valid_format is None or not text.isalnum():
         return False
     else:    
         return True
@@ -40,11 +43,13 @@ def frescure_to_date(frescure: str) -> str:
             frescure_list.append(char)
         if char.isdigit():
             frescure_list.append(char)
+        else:
+            continue
 
     dia1 = frescure_list[1]
     dia2 = frescure_list[2]
     dia = int(dia1 + dia2)
-    mes = ord(frescure_list[0]) - ord("A") + 1  # A->1 ... L->12
+    mes = ord(frescure_list[0]) - ord("A") + 1
     last_digit = int(frescure_list[3])
     ref =  datetime.now().year
     decade_start = (ref // 10) * 10
