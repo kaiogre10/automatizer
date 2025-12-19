@@ -142,7 +142,6 @@ class AppGeneradorCP:
 
         self.add_new_row()
 
-    # --- Métodos de Scrollbar ---
     def _on_frame_configure(self, event):
         """Actualiza la región de scroll cuando el contenido interno cambia."""
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
@@ -206,6 +205,14 @@ class AppGeneradorCP:
         self.entry_cant.insert(0, 0)
         self.entry_cant.grid(row=0, column=3, padx=(2, 0))
 
+        # Validadores: SKU max 7 chars, Frescura max 4 chars, Copias sólo numérico hasta 2 dígitos
+        vc_sku = self.master.register(self._vc_sku)
+        vc_fres = self.master.register(self._vc_frescura)
+        vc_cop = self.master.register(self._vc_copias)
+        self.entry_sku.config(validate='key', validatecommand=(vc_sku, '%P'))
+        self.entry_frescura.config(validate='key', validatecommand=(vc_fres, '%P'))
+        self.entry_cant.config(validate='key', validatecommand=(vc_cop, '%P'))
+
         # Botón "-" para restar una copia (mínimo 1)
         btn_menos = tk.Button(
             row_frame,
@@ -224,7 +231,7 @@ class AppGeneradorCP:
         )
         btn_mas.grid(row=0, column=5, padx=(1, 4))
         
-        self.lbl_status = tk.Label(row_frame, text="Ingrese datos", fg="black", anchor="w", justify="center")
+        self.lbl_status = tk.Label(row_frame, text="Ingrese datos", fg="gray", anchor="w", justify="center")
         self.lbl_status.grid(row=0, column=6, padx=10, sticky="ew")
         
         # Configurar columnas del row_frame para que el status ocupe el resto
@@ -255,7 +262,6 @@ class AppGeneradorCP:
             self.lbl_status.config(text="NO SE HAN CARGADO FRESCURAS", font="bold", fg="red")
 
         elif self.mode_var.get() == "barcodes":
-            # Hacer el entry de frescura casi invisible / inútil
             self.entry_frescura.config(state="disabled", width=1, bg=self.canvas_frame.cget("bg"), relief="flat")
             self.entry_frescura.grid_remove()
         else:
@@ -273,6 +279,26 @@ class AppGeneradorCP:
             widget.insert(0, upper)
             widget.icursor(pos)
 
+    def _vc_sku(self, P: str) -> bool:
+        """Allow empty or up to 7 characters for SKU."""
+        if P is None:
+            return False
+        return len(P) <= 7 and P.isdigit()
+
+    def _vc_frescura(self, P: str) -> bool:
+        """Allow empty or up to 4 characters for frescura."""
+        if P is None:
+            return False
+        return len(P) <= 4
+
+    def _vc_copias(self, P: str) -> bool:
+        """Allow empty or numeric string with max 2 digits."""
+        if P is None:
+            return False
+        if P == "":
+            return True
+        return P.isdigit() and len(P) <= 2
+
     def _calculate_preview(self, row):
         """ Lógica para mostrar descripción o cálculo completo """
         mode = self.mode_var.get()
@@ -283,15 +309,15 @@ class AppGeneradorCP:
         # Si estamos en modo frescuras y no hay CSV cargado válido
         if mode == "frescuras" and (self.shelf_data is None or self.shelf_data.empty):
             
-            status_lbl.config(text="Cargue primero un archivo CSV válido.", fg="gray")
+            status_lbl.config(text="Cargue primero un archivo CSV válido.", fg="black")
             return
         
         if not sku_val:
-            status_lbl.config(text="Ingrese datos", fg="gray")
+            status_lbl.config(text="Ingrese datos", fg="black")
             return
         
         if mode == "barcodes":
-            status_lbl.config(text="Ingrese texto para código de barras", fg="gray")
+            status_lbl.config(text="Ingrese texto para código de barras", fg="black")
             return
 
         # 1. Validar SKU numéricamente
