@@ -194,23 +194,23 @@ class AppGeneradorCP:
         self.lbl_index = tk.Label(row_frame, text=str(row_index), width=3, anchor="center")
         self.lbl_index.grid(row=0, column=0, padx=2)
         
-        self.entry_sku = tk.Entry(row_frame, width=self.W_COL1 + 2, justify="center")
-        self.entry_sku.grid(row=0, column=1, padx=2)
+        entry_sku = tk.Entry(row_frame, width=self.W_COL1 + 2, justify="center")
+        entry_sku.grid(row=0, column=1, padx=2)
         
-        self.entry_frescura = tk.Entry(row_frame, width=self.W_COL2 + 2, justify="center")
-        self.entry_frescura.grid(row=0, column=2, padx=2)
+        entry_frescura = tk.Entry(row_frame, width=self.W_COL2 + 2, justify="center")
+        entry_frescura.grid(row=0, column=2, padx=2)
         
         # Campo de copias
         self.entry_cant = tk.Entry(row_frame, width=self.W_COL3 + 2, justify="center")
-        self.entry_cant.insert(0, 0)
+        self.entry_cant.insert(0, 1) # CAMBIO: Inicializar en 1 en lugar de 0
         self.entry_cant.grid(row=0, column=3, padx=(2, 0))
 
         # Validadores: SKU max 7 chars, Frescura max 4 chars, Copias sólo numérico hasta 2 dígitos
         vc_sku = self.master.register(self._vc_sku)
         vc_fres = self.master.register(self._vc_frescura)
         vc_cop = self.master.register(self._vc_copias)
-        self.entry_sku.config(validate='key', validatecommand=(vc_sku, '%P'))
-        self.entry_frescura.config(validate='key', validatecommand=(vc_fres, '%P'))
+        entry_sku.config(validate='key', validatecommand=(vc_sku, '%P'))
+        entry_frescura.config(validate='key', validatecommand=(vc_fres, '%P'))
         self.entry_cant.config(validate='key', validatecommand=(vc_cop, '%P'))
 
         # Botón "-" para restar una copia (mínimo 1)
@@ -240,15 +240,15 @@ class AppGeneradorCP:
         row_data: Dict[str, Any] = {
             'frame': row_frame,
             'index_lbl': self.lbl_index,
-            'sku': self.entry_sku,
-            'frescura': self.entry_frescura,
+            'sku': entry_sku,
+            'frescura': entry_frescura,
             'copias': self.entry_cant,
             'status': self.lbl_status
         }
         
         # Bindings para cálculo en tiempo real
-        self.entry_sku.bind("<KeyRelease>", lambda e: self._calculate_preview(row_data))
-        self.entry_frescura.bind(
+        entry_sku.bind("<KeyRelease>", lambda e: self._calculate_preview(row_data))
+        entry_frescura.bind(
             "<KeyRelease>",
             lambda e, r=row_data: (self._force_upper(e.widget), self._calculate_preview(r))
         )
@@ -256,17 +256,17 @@ class AppGeneradorCP:
         # Ajustar la columna Frescura según el modo
          
         if self.mode_var.get() == "frescuras" and not self.input_path_var.get():
-            self.entry_frescura.config(state="readonly", fg="gray", bg=self.canvas_frame.cget("bg"))
-            self.entry_sku.config(state="readonly", fg="gray", bg=self.canvas_frame.cget("bg"))
+            entry_frescura.config(state="readonly", fg="gray", bg=self.canvas_frame.cget("bg"))
+            entry_sku.config(state="readonly", fg="gray", bg=self.canvas_frame.cget("bg"))
             self.entry_cant.config(state="readonly", fg="gray", bg=self.canvas_frame.cget("bg"))
             self.lbl_status.config(text="NO SE HAN CARGADO FRESCURAS", font="bold", fg="red")
 
         elif self.mode_var.get() == "barcodes":
-            self.entry_frescura.config(state="disabled", width=1, bg=self.canvas_frame.cget("bg"), relief="flat")
-            self.entry_frescura.grid_remove()
+            entry_frescura.config(state="disabled", width=1, bg=self.canvas_frame.cget("bg"), relief="flat")
+            entry_frescura.grid_remove()
         else:
-            self.entry_frescura.config(state="normal", width=self.W_COL2 + 2, bg="white", relief="sunken")
-            self.entry_frescura.grid(row=0, column=2, padx=2)
+            entry_frescura.config(state="normal", width=self.W_COL2 + 2, bg="white", relief="sunken")
+            entry_frescura.grid(row=0, column=2, padx=2)
         
         self.rows_data.append(row_data)
 
@@ -279,23 +279,30 @@ class AppGeneradorCP:
             widget.insert(0, upper)
             widget.icursor(pos)
 
+    def _force_lower(self, widget: tk.Entry):
+        current = widget.get()
+        lower = current.lower()
+        if current != lower:
+            pos = widget.index(tk.INSERT)
+            widget.delete(0, tk.END)
+            widget.insert(0, lower)
+            widget.icursor(pos)
+
     def _vc_sku(self, P: str) -> bool:
-        """Allow empty or up to 7 characters for SKU."""
-        if P is None:
-            return False
-        return len(P) <= 7 and P.isdigit()
+        """Allow empty or up to 7 numeric characters for SKU."""
+        if P == "":  # Permitir vacío explícitamente
+            return True
+        return P.isdigit() and len(P) <= 7
 
     def _vc_frescura(self, P: str) -> bool:
         """Allow empty or up to 4 characters for frescura."""
-        if P is None:
-            return False
+        if P == "":  # Permitir vacío explícitamente
+            return True
         return len(P) <= 4
 
     def _vc_copias(self, P: str) -> bool:
         """Allow empty or numeric string with max 2 digits."""
-        if P is None:
-            return False
-        if P == "":
+        if P == "":  # Permitir vacío explícitamente
             return True
         return P.isdigit() and len(P) <= 2
 
@@ -392,16 +399,19 @@ class AppGeneradorCP:
 
         # Actualizar ruta y cargar datos
         self.input_path_var.set(file_path)
-        self.shelf_times_path = file_path  # Usar este CSV en el resto de la app
+        self.shelf_times_path = file_path
 
         self.shelf_data = self._load_shelf_data()
         if self.shelf_data.empty:
             messagebox.showwarning("Advertencia", "No se pudieron cargar datos del archivo seleccionado.")
         else:
-            self.entry_frescura.config(state="normal")
-            self.entry_sku.config(state="normal")
-            self.entry_cant.config(state="normal")
-            self.lbl_status.config(state="active", text="Ingrese datos", fg="black", anchor="w", justify="center")
+            # Actualizar TODAS las filas existentes para habilitar inputs
+            for row_data in self.rows_data:
+                row_data['frescura'].config(state="normal", bg="white")
+                row_data['sku'].config(state="normal", bg="white")
+                row_data['copias'].config(state="normal", bg="white")
+                row_data['status'].config(text="Ingrese datos", fg="gray")
+            
             messagebox.showinfo("Información", "Archivo cargado correctamente.")
 
     def _clear_all_rows(self):
@@ -415,6 +425,46 @@ class AppGeneradorCP:
         if not mode:
             return
         
+        # --- VALIDACIÓN PREVIA: Verificar que todas las filas sean válidas ---
+        filas_invalidas = []
+        for idx, row in enumerate(self.rows_data, start=1):
+            v1 = row['sku'].get().strip()
+            v2 = row['frescura'].get().strip()
+            cant_str = row['copias'].get().strip()
+            status_text = row['status'].cget('text')
+            status_fg = row['status'].cget('fg')
+            
+            # Criterios de invalidez:
+            # 1. Campos vacíos (excepto frescura en modo barcodes)
+            # 2. Status en rojo (error)
+            # 3. Status que indica problema
+            
+            if mode == "frescuras":
+                if not v1 or not v2:
+                    filas_invalidas.append(f"Fila {idx}: Datos incompletos")
+                    continue
+                if status_fg == "red" or "inválido" in status_text.lower() or "inexistente" in status_text.lower():
+                    filas_invalidas.append(f"Fila {idx}: {status_text}")
+            else:  # barcodes
+                if not v1:
+                    filas_invalidas.append(f"Fila {idx}: Texto vacío")
+                    continue
+            
+            # Validar cantidad
+            try:
+                cantidad = int(cant_str)
+                if cantidad < 1 or cantidad > 50:
+                    filas_invalidas.append(f"Fila {idx}: Cantidad fuera de rango (1-50)")
+            except ValueError:
+                filas_invalidas.append(f"Fila {idx}: Cantidad inválida")
+        
+        # Si hay errores, mostrar mensaje y abortar
+        if filas_invalidas:
+            msg_error = "Corrija los siguientes errores antes de generar:\n\n" + "\n".join(filas_invalidas)
+            messagebox.showerror("Validación fallida", msg_error)
+            return
+        
+        # --- CONTINUAR CON GENERACIÓN (código original) ---
         output_folder = self.output_path_var.get()
         query: List[List[str]] = []
         
@@ -434,10 +484,11 @@ class AppGeneradorCP:
             
             try:
                 cantidad = int(cant_str)
-                if cantidad < 1: cantidad = 1
+                if cantidad < 1:
+                    cantidad = 1
             except: cantidad = 1
 
-            if mode == "frescuras" :
+            if mode == "frescuras":
                 if validate_sku(v1) and validate_frescures(self.frescures_pattern, v2.upper()):
                     # Multiplicar filas (lógica de copias)
                     for _ in range(cantidad):

@@ -1,0 +1,63 @@
+
+app:
+  name: "Generador de Etiquetas"
+  version: "2.0.0"
+  window:
+    width: 650
+    height: 480
+    resizable: true
+
+ui:
+  colors:
+    header_bg: "#ddd"
+    status_ok: "#3BAB41"      # Verde
+    status_warn: "#d32f2f"    # Rojo
+    status_info: "#1976D2"    # Azul
+    button_add: "#e3f2fd"
+    button_generate_bg: "#2e7d32"
+    button_generate_fg: "white"
+  
+  fonts:
+    default: ["Arial", 9]
+    header: ["Arial", 9, "bold"]
+    button: ["Arial", 10, "bold"]
+  
+  columns:
+    index_width: 5
+    sku_width: 10
+    frescura_width: 10
+    copias_width: 12
+
+validation:
+  sku:
+    max_length: 7
+    pattern: "^[0-9]+$"
+  frescura:
+    max_length: 4
+    pattern: "^[A-L](0[1-9]|1[0-9]|2[0-9]|3[0-1])[0-9]$"
+  copias:
+    min: 1
+    max: 50
+
+paths:
+  data:
+    frescuras_csv: "data/frescuras.csv"
+    template_xlsx: "data/plantilla.xlsx"
+  output:
+    default_folder: "formato_etiquetas"
+    temp_images: "temp_img"
+  allowed_extensions:
+    input: [".csv"]
+    template: [".xlsx"]
+
+security:
+  max_rows_per_generation: 100
+  max_file_size_mb: 10
+  timeout_generation_seconds: 300
+  sanitize_input: true
+
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  max_file_size_mb: 5
+  backup_count: 3
+  format: "%(filename)s:%(lineno)d: %(message)s"
