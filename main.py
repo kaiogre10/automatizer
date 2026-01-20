@@ -10,14 +10,16 @@ from typing import List, Dict, Any
 from src.frescures import Frescurer
 from src.barcoder import Barcoder
 from utils.utils import validate_frescures, validate_sku, frescure_to_date
+from config.config_loader import conf
 
 logger = logging.getLogger(__name__)
 
 class AppGeneradorCP:
     def __init__(self, master):
         self.master = master
+        self.shelf_data = None
+        self.shelf_times_path = None
         
-        # --- Configuración de Rutas para PyInstaller ---
         def resource_path(relative_path):
             """ Obtiene la ruta absoluta al recurso, funciona para dev y para PyInstaller """
             try:
@@ -27,7 +29,7 @@ class AppGeneradorCP:
             return os.path.join(base_path, relative_path)
 
         self.project_root = resource_path(".")
-        self.template_path = resource_path(os.path.join("data", "plantilla.xlsx"))
+        self.template_path = resource_path(os.path.join(conf.get("paths.data.template_xlsx", "data/plantilla.xlsx")))
         
         # Rutas de salida (fuera del exe)
         if getattr(sys, 'frozen', False):
@@ -35,32 +37,65 @@ class AppGeneradorCP:
         else:
             application_path = os.path.dirname(os.path.abspath(__file__))
 
-        self.output_path = os.path.join(application_path, "output")
-        self.temp_path = os.path.join(application_path, "temp_img")
+        self.output_path = os.path.join(application_path, conf.get("paths.output.default_folder", "formato_etiquetas"))
+        self.temp_path = os.path.join(application_path, conf.get("paths.output.temp_images", "temp_img"))
 
         self.output_path_var = tk.StringVar(value=self.output_path)
         self.input_path_var = tk.StringVar(value="")
 
         # --- Datos y Variables ---
-        self.frescures_pattern = re.compile(r'^[A-L](0[1-9]|1[0-9]|2[0-9]|3[0-1])[0-9]$')
+        frescura_pattern = conf.get("validation.frescura.pattern", [])
+        self.frescures_pattern = re.compile(frescura_pattern)
         self.rows_data: List[Dict[str, Any]] = []
         self.mode_var = tk.StringVar(value="frescuras")
+        self.deletion_mode = False
+
+        # ==========================================================
+        # ESTILOS CENTRALIZADOS
+        # ==========================================================
+        self.colors = {
+            'header_bg': conf.get("ui.colors.header_bg", "#ddd"),
+            'status_ok': conf.get("ui.colors.status_ok", "#3BAB41"),
+            'status_warn': conf.get("ui.colors.status_warn", "#d32f2f"),
+            'status_info': conf.get("ui.colors.status_info", "#1976D2"),
+            'button_add': conf.get("ui.colors.button_add", "#e3f2fd"),
+            'button_generate_bg': conf.get("ui.colors.button_generate_bg", "#2e7d32"),
+            'button_generate_fg': conf.get("ui.colors.button_generate_fg", "white"),
+            'entry_normal_bg': "white",
+            'entry_disabled_bg': "#f0f0f0",
+            'entry_normal_fg': "black",
+            'entry_disabled_fg': "gray",
+            'status_default_fg': "gray",
+            'status_blocked_fg': "red",
+        }
+        self.fonts = {
+            'default': tuple(conf.get("ui.fonts.default", ["Arial", 9])),
+            'header': tuple(conf.get("ui.fonts.header", ["Arial", 9, "bold"])),
+            'button': tuple(conf.get("ui.fonts.button", ["Arial", 9, "bold"])),
+            'status': tuple(conf.get("ui.fonts.status", ["Arial", 9])),
+            'status_blocked': tuple(conf.get("ui.fonts.status_blocked", ["Arial", 9, "bold"])),
+        }
+        
+        # Textos por defecto
+        self.texts = {
+            'status_default': "Ingrese datos",
+            'status_blocked': "CARGUE ARCHIVO CSV",
+            'status_barcodes': "Listo para generar",
+        }
 
         # ==========================================================
         # SECCIÓN 1: Configuración Superior
         # ==========================================================
-
-        top_frame = tk.Frame(master, background="",padx=10, pady=10)
+        top_frame = tk.Frame(master, background="", padx=10, pady=10)
         top_frame.grid(row=0, column=0, sticky="ew")
 
-        tk.Label(top_frame, text="Cargar archivo:", font=('Arial', 9)).pack(side="left")
+        tk.Label(top_frame, text="Cargar archivo:", font=self.fonts['default']).pack(side="left")
         tk.Entry(top_frame, textvariable=self.input_path_var, width=15, state="readonly").pack(side="left", padx=1)
         tk.Button(top_frame, text="📂", command=self._select_input_file).pack(side="left", padx=1)
 
-        # Espaciador flexible en el medio
         tk.Label(top_frame, text="  ").pack(side="left", expand=True)
 
-        tk.Label(top_frame, text="Carpeta de salida:", font=('Arial', 9)).pack(side="left")
+        tk.Label(top_frame, text="Carpeta de salida:", font=self.fonts['default']).pack(side="left")
         tk.Entry(top_frame, textvariable=self.output_path_var, width=15, state="readonly").pack(side="left", padx=5)
         tk.Button(top_frame, text="📂", command=self._select_output_folder).pack(side="left", padx=5)
 
@@ -73,36 +108,40 @@ class AppGeneradorCP:
         # ==========================================================
         # SECCIÓN 2: Encabezados
         # ==========================================================
-
-        self.header_frame = tk.Frame(master, bg="#ddd", pady=5)
+        self.header_frame = tk.Frame(master, bg=self.colors['header_bg'], pady=5)
         self.header_frame.grid(row=2, column=0, padx=10, sticky="ew")
-        self.header_frame.columnconfigure(4, weight=1)
+        self.header_frame.columnconfigure(7, weight=1)
 
-        self.col_idx = 5
-        self.W_COL1 = 10
-        self.W_COL2 = 10
-        self.W_COL3 = 12
+        self.col_idx = conf.get("ui.columns.index_width", 5)
+        self.W_COL1 = conf.get("ui.columns.sku_width", 10)
+        self.W_COL2 = conf.get("ui.columns.frescura_width", 10)
+        self.W_COL3 = conf.get("ui.columns.copias_width", 12)
         
-        # Columna índice
-        self.header_index = tk.Label(self.header_frame, text="Num", width=self.col_idx, bg="#ddd", font=('Arial', 9, 'bold'))
-        self.header_index.grid(row=0, column=0)
+        self.header_select = tk.Label(self.header_frame, text="Sel.", width=4, bg=self.colors['header_bg'], font=self.fonts['header'])
+        self.header_select.grid(row=0, column=0, padx=(0, 2))
+        self.header_select.grid_remove()
 
-        # Guardamos referencias a los labels de encabezado
-        self.header_sku = tk.Label(self.header_frame, text="SKU", width=self.W_COL1, bg="#ddd", font=('Arial', 9, 'bold'))
-        self.header_sku.grid(row=0, column=1)
+        self.header_index = tk.Label(self.header_frame, text="Num", width=3, bg=self.colors['header_bg'], font=self.fonts['header'])
+        self.header_index.grid(row=0, column=1, padx=2)
 
-        self.header_frescura = tk.Label(self.header_frame, text="Frescura", width=self.W_COL2, bg="#ddd", font=('Arial', 9, 'bold'))
-        self.header_frescura.grid(row=0, column=2)
+        self.header_sku = tk.Label(self.header_frame, text="SKU", width=self.W_COL1 + 2, bg=self.colors['header_bg'], font=self.fonts['header'])
+        self.header_sku.grid(row=0, column=2, padx=2)
 
-        self.header_copias = tk.Label(self.header_frame, text="Copias", width=self.W_COL3, bg="#ddd", font=('Arial', 9, 'bold'))
-        self.header_copias.grid(row=0, column=3)
+        self.header_frescura = tk.Label(self.header_frame, text="Frescura", width=self.W_COL2 + 2, bg=self.colors['header_bg'], font=self.fonts['header'])
+        self.header_frescura.grid(row=0, column=3, padx=2)
 
-        tk.Label(self.header_frame, text="Info", bg="#ddd", font=('Arial', 9, 'bold'), anchor="w").grid(row=0, column=4, sticky="w", padx=15.0)
+        self.header_copias = tk.Label(self.header_frame, text="Copias", width=self.W_COL3 + 2, bg=self.colors['header_bg'], font=self.fonts['header'])
+        self.header_copias.grid(row=0, column=4, padx=(2, 0))
+
+        # Espacio para los botones +/- (columnas 5 y 6)
+        tk.Label(self.header_frame, text="", width=2, bg=self.colors['header_bg']).grid(row=0, column=5, padx=1)
+        tk.Label(self.header_frame, text="", width=2, bg=self.colors['header_bg']).grid(row=0, column=6, padx=(1, 4))
+
+        tk.Label(self.header_frame, text="Info", bg=self.colors['header_bg'], font=self.fonts['header'], anchor="w").grid(row=0, column=7, sticky="w", padx=10)
 
         # ==========================================================
         # SECCIÓN 3: Área de Entrada con Scroll
         # ==========================================================
-
         self.canvas_frame = tk.Frame(master, borderwidth=1, relief="sunken")
         self.canvas_frame.grid(row=3, column=0, padx=10, pady=5, sticky="nsew")
 
@@ -114,18 +153,11 @@ class AppGeneradorCP:
         self.scrollbar_y.pack(side="right", fill="y")
         self.canvas.pack(side="left", fill="both", expand=True)
 
-        # Frame interno donde van las filas
         self.input_frame = tk.Frame(self.canvas)
-        
-        # TRUCO DEL SCROLLBAR: Crear ventana en el canvas y vincular el tamaño
         self.canvas_window = self.canvas.create_window((0, 0), window=self.input_frame, anchor="nw")
 
-        # 1. Cuando el input_frame cambie de tamaño (filas nuevas), actualiza la region de scroll
         self.input_frame.bind("<Configure>", self._on_frame_configure)
-        # 2. Cuando el canvas cambie de tamaño (resize ventana), ajusta el ancho del input_frame
         self.canvas.bind("<Configure>", self._on_canvas_configure)
-
-        # Bindings para rueda del ratón
         self.canvas.bind_all("<MouseWheel>", self._on_mousewheel)
 
         # ==========================================================
@@ -134,14 +166,134 @@ class AppGeneradorCP:
         self.control_frame = tk.Frame(master, pady=10)
         self.control_frame.grid(row=4, column=0, sticky="ew", padx=10)
 
-        # tk.Button(self.control_frame, text="-", command=self.add_new_row, bg="#e3f2fd").pack(side="left", padx=5)
-        # tk.Button(self.control_frame, text="+", command=self.add_new_row, bg="#e3f2fd").pack(side="left", padx=5)
-        tk.Button(self.control_frame, text="Añadir Fila", command=self.add_new_row, bg="#e3f2fd").pack(side="left", padx=5)
-        tk.Button(self.control_frame, text="Limpiar", command=self._clear_all_rows).pack(side="left", padx=5)
-        tk.Button(self.control_frame, text="GENERAR", command=self.execute_generation, bg='#2e7d32', fg='white', font=('Arial', 10, 'bold'), height=2).pack(side="right", padx=10)
+        self.btn_add = tk.Button(self.control_frame, text="Añadir Fila", command=self.add_new_row, bg=self.colors['button_add'])
+        self.btn_add.pack(side="left", padx=5)
+        self.btn_delete = tk.Button(self.control_frame, text="Eliminar Fila", command=self._toggle_deletion_mode)
+        self.btn_delete.pack(side="left", padx=5)
+        self.btn_cancel_delete = tk.Button(self.control_frame, text="Cancelar", command=self._cancel_deletion_mode)
+        self.btn_cancel_delete.pack(side="left", padx=5)
+        self.btn_cancel_delete.pack_forget()  # Oculto por defecto
+        self.btn_clear = tk.Button(self.control_frame, text="Limpiar", command=self._clear_all_rows)
+        self.btn_clear.pack(side="left", padx=5)
+        self.btn_generate = tk.Button(self.control_frame, text="GENERAR", command=self.execute_generation, bg=self.colors['button_generate_bg'], fg=self.colors['button_generate_fg'], font=self.fonts['button'], height=2)
+        self.btn_generate.pack(side="right", padx=10)
 
         self.add_new_row()
 
+    # ==========================================================
+    # MÉTODOS DE ESTILO CENTRALIZADOS
+    # ==========================================================
+    def _apply_row_style(self, row_data: Dict[str, Any], state: str):
+        """
+        Aplica estilos consistentes a una fila según su estado.
+        state: 'normal', 'blocked', 'barcodes'
+        """
+        entry_sku = row_data['sku']
+        entry_frescura = row_data['frescura']
+        entry_copias = row_data['copias']
+        lbl_status = row_data['status']
+
+        if state == 'blocked':
+            # Estado bloqueado: sin CSV cargado en modo frescuras
+            entry_sku.config(
+                state="readonly",
+                fg=self.colors['entry_disabled_fg'],
+                bg=self.colors['entry_disabled_bg'],
+                relief="sunken"
+            )
+            entry_frescura.config(
+                state="readonly",
+                fg=self.colors['entry_disabled_fg'],
+                bg=self.colors['entry_disabled_bg'],
+                relief="sunken"
+            )
+            entry_frescura.grid(row=0, column=3, padx=2)
+            entry_copias.config(
+                state="readonly",
+                fg=self.colors['entry_disabled_fg'],
+                bg=self.colors['entry_disabled_bg'],
+                relief="sunken"
+            )
+            lbl_status.config(
+                text=self.texts['status_blocked'],
+                fg=self.colors['status_blocked_fg'],
+                font=self.fonts['status_blocked']
+            )
+
+        elif state == 'barcodes':
+            # Estado barcodes: ocultar frescura
+            entry_sku.config(
+                state="normal",
+                fg=self.colors['entry_normal_fg'],
+                bg=self.colors['entry_normal_bg'],
+                relief="sunken"
+            )
+            entry_frescura.config(
+                state="disabled",
+                width=1,
+                bg=self.colors['entry_disabled_bg'],
+                relief="flat"
+            )
+            entry_frescura.grid_remove()
+            entry_copias.config(
+                state="normal",
+                fg=self.colors['entry_normal_fg'],
+                bg=self.colors['entry_normal_bg'],
+                relief="sunken"
+            )
+            lbl_status.config(
+                text=self.texts['status_barcodes'],
+                fg=self.colors['status_default_fg'],
+                font=self.fonts['status']
+            )
+
+        else:  # 'normal'
+            # Estado normal: CSV cargado, modo frescuras
+            entry_sku.config(
+                state="normal",
+                fg=self.colors['entry_normal_fg'],
+                bg=self.colors['entry_normal_bg'],
+                relief="sunken"
+            )
+            entry_frescura.config(
+                state="normal",
+                width=self.W_COL2 + 2,
+                fg=self.colors['entry_normal_fg'],
+                bg=self.colors['entry_normal_bg'],
+                relief="sunken"
+            )
+            entry_frescura.grid(row=0, column=3, padx=2)
+            entry_copias.config(
+                state="normal",
+                fg=self.colors['entry_normal_fg'],
+                bg=self.colors['entry_normal_bg'],
+                relief="sunken"
+            )
+            lbl_status.config(
+                text=self.texts['status_default'],
+                fg=self.colors['status_default_fg'],
+                font=self.fonts['status']
+            )
+
+    def _get_current_row_state(self) -> str:
+        """Determina el estado actual que deben tener las filas."""
+        mode = self.mode_var.get()
+        if mode == "barcodes":
+            return 'barcodes'
+        elif not self.input_path_var.get():
+            return 'blocked'
+        else:
+            return 'normal'
+
+    def _apply_style_to_all_rows(self):
+        """Aplica el estilo actual a todas las filas existentes."""
+        state = self._get_current_row_state()
+        for row_data in self.rows_data:
+            self._apply_row_style(row_data, state)
+
+    # ==========================================================
+    # EVENTOS Y CONFIGURACIÓN
+    # ==========================================================
     def _on_frame_configure(self, event):
         """Actualiza la región de scroll cuando el contenido interno cambia."""
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
@@ -155,7 +307,9 @@ class AppGeneradorCP:
         if self.canvas.bbox("all")[3] > self.canvas.winfo_height():
             self.canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
 
-    # --- Lógica de Negocio ---
+    # ==========================================================
+    # LÓGICA DE NEGOCIO
+    # ==========================================================
     def _load_shelf_data(self) -> pd.DataFrame:
         try:
             if self.shelf_times_path and os.path.exists(self.shelf_times_path):
@@ -169,106 +323,109 @@ class AppGeneradorCP:
 
     def _select_output_folder(self):
         folder = filedialog.askdirectory()
-        if folder: self.output_path_var.set(folder)
+        if folder:
+            self.output_path_var.set(folder)
 
     def _on_mode_change(self):
         mode = self.mode_var.get()
         # Actualizar encabezados
         if mode == "barcodes":
             self.header_sku.config(text="Texto")
-            # Ocultar encabezado de frescura
             self.header_frescura.grid_remove()
         else:
             self.header_sku.config(text="SKU")
-            # Mostrar encabezado de frescura
             self.header_frescura.grid()
-        # Limpiar filas y crear una nueva con el modo actual
-        self._clear_all_rows()
+        
+        # Aplicar estilos a todas las filas
+        self._apply_style_to_all_rows()
     
     def add_new_row(self):
+        # Bloquear si estamos en modo eliminación
+        if self.deletion_mode:
+            messagebox.showwarning("Operación bloqueada", "Finalice o cancele la eliminación de filas primero.")
+            return
+        
+        # Bloquear si estamos en modo frescuras y no hay archivo cargado
+        if self.mode_var.get() == "frescuras" and not self.input_path_var.get():
+            messagebox.showwarning("Archivo requerido", "Debe cargar un archivo CSV antes de agregar filas en modo Frescuras.")
+            return
+        
         row_frame = tk.Frame(self.input_frame)
         row_frame.pack(fill="x", pady=2)
 
-        # Índice de la fila (1‑based)
-        row_index = len(self.rows_data) + 1
-        self.lbl_index = tk.Label(row_frame, text=str(row_index), width=3, anchor="center")
-        self.lbl_index.grid(row=0, column=0, padx=2)
-        
-        entry_sku = tk.Entry(row_frame, width=self.W_COL1 + 2, justify="center")
-        entry_sku.grid(row=0, column=1, padx=2)
-        
-        entry_frescura = tk.Entry(row_frame, width=self.W_COL2 + 2, justify="center")
-        entry_frescura.grid(row=0, column=2, padx=2)
-        
-        # Campo de copias
-        self.entry_cant = tk.Entry(row_frame, width=self.W_COL3 + 2, justify="center")
-        self.entry_cant.insert(0, 1) # CAMBIO: Inicializar en 1 en lugar de 0
-        self.entry_cant.grid(row=0, column=3, padx=(2, 0))
+        select_var = tk.BooleanVar(value=False)
+        chk_select = tk.Checkbutton(row_frame, variable=select_var)
+        chk_select.grid(row=0, column=0, padx=(0, 2))
+        chk_select.grid_remove()
 
-        # Validadores: SKU max 7 chars, Frescura max 4 chars, Copias sólo numérico hasta 2 dígitos
+        row_index = len(self.rows_data) + 1
+        lbl_index = tk.Label(row_frame, text=str(row_index), width=3, anchor="center", font=self.fonts['default'])
+        lbl_index.grid(row=0, column=1, padx=2)
+        
+        entry_sku = tk.Entry(row_frame, width=self.W_COL1 + 2, justify="center", font=self.fonts['default'])
+        entry_sku.grid(row=0, column=2, padx=2)
+        
+        entry_frescura = tk.Entry(row_frame, width=self.W_COL2 + 2, justify="center", font=self.fonts['default'])
+        entry_frescura.grid(row=0, column=3, padx=2)
+        
+        entry_cant = tk.Entry(row_frame, width=self.W_COL3 + 2, justify="center", font=self.fonts['default'])
+        entry_cant.insert(0, "1")
+        entry_cant.grid(row=0, column=4, padx=(2, 0))
+
+        # Validadores
         vc_sku = self.master.register(self._vc_sku)
         vc_fres = self.master.register(self._vc_frescura)
         vc_cop = self.master.register(self._vc_copias)
         entry_sku.config(validate='key', validatecommand=(vc_sku, '%P'))
         entry_frescura.config(validate='key', validatecommand=(vc_fres, '%P'))
-        self.entry_cant.config(validate='key', validatecommand=(vc_cop, '%P'))
+        entry_cant.config(validate='key', validatecommand=(vc_cop, '%P'))
 
-        # Botón "-" para restar una copia (mínimo 1)
         btn_menos = tk.Button(
             row_frame,
             text="-",
             width=2,
-            command=lambda e=self.entry_cant: self._ajustar_copias(e, -1)
+            font=self.fonts['default'],
+            command=lambda e=entry_cant: self._ajustar_copias(e, -1)
         )
-        btn_menos.grid(row=0, column=4, padx=1)
+        btn_menos.grid(row=0, column=5, padx=1)
 
-        # Botón "+" para sumar una copia
         btn_mas = tk.Button(
             row_frame,
             text="+",
             width=2,
-            command=lambda e=self.entry_cant: self._ajustar_copias(e, +1)
+            font=self.fonts['default'],
+            command=lambda e=entry_cant: self._ajustar_copias(e, +1)
         )
-        btn_mas.grid(row=0, column=5, padx=(1, 4))
+        btn_mas.grid(row=0, column=6, padx=(1, 4))
         
-        self.lbl_status = tk.Label(row_frame, text="Ingrese datos", fg="gray", anchor="w", justify="center")
-        self.lbl_status.grid(row=0, column=6, padx=10, sticky="ew")
+        lbl_status = tk.Label(row_frame, text="", anchor="w", justify="left", font=self.fonts['status'])
+        lbl_status.grid(row=0, column=7, padx=10, sticky="ew")
         
-        # Configurar columnas del row_frame para que el status ocupe el resto
-        row_frame.columnconfigure(6, weight=1)
+        row_frame.columnconfigure(7, weight=1)
 
         row_data: Dict[str, Any] = {
             'frame': row_frame,
-            'index_lbl': self.lbl_index,
+            'select_var': select_var,
+            'select_chk': chk_select,
+            'index_lbl': lbl_index,
             'sku': entry_sku,
             'frescura': entry_frescura,
-            'copias': self.entry_cant,
-            'status': self.lbl_status
+            'copias': entry_cant,
+            'status': lbl_status
         }
         
         # Bindings para cálculo en tiempo real
-        entry_sku.bind("<KeyRelease>", lambda e: self._calculate_preview(row_data))
+        entry_sku.bind("<KeyRelease>", lambda e, r=row_data: self._calculate_preview(r))
         entry_frescura.bind(
             "<KeyRelease>",
             lambda e, r=row_data: (self._force_upper(e.widget), self._calculate_preview(r))
         )
         
-        # Ajustar la columna Frescura según el modo
-         
-        if self.mode_var.get() == "frescuras" and not self.input_path_var.get():
-            entry_frescura.config(state="readonly", fg="gray", bg=self.canvas_frame.cget("bg"))
-            entry_sku.config(state="readonly", fg="gray", bg=self.canvas_frame.cget("bg"))
-            self.entry_cant.config(state="readonly", fg="gray", bg=self.canvas_frame.cget("bg"))
-            self.lbl_status.config(text="NO SE HAN CARGADO FRESCURAS", font="bold", fg="red")
-
-        elif self.mode_var.get() == "barcodes":
-            entry_frescura.config(state="disabled", width=1, bg=self.canvas_frame.cget("bg"), relief="flat")
-            entry_frescura.grid_remove()
-        else:
-            entry_frescura.config(state="normal", width=self.W_COL2 + 2, bg="white", relief="sunken")
-            entry_frescura.grid(row=0, column=2, padx=2)
-        
         self.rows_data.append(row_data)
+        
+        # Aplicar estilo según el estado actual
+        state = self._get_current_row_state()
+        self._apply_row_style(row_data, state)
 
     def _force_upper(self, widget: tk.Entry):
         current = widget.get()
@@ -289,25 +446,24 @@ class AppGeneradorCP:
             widget.icursor(pos)
 
     def _vc_sku(self, P: str) -> bool:
-        """Allow empty or up to 7 numeric characters for SKU."""
-        if P == "":  # Permitir vacío explícitamente
+        if P == "":
             return True
-        return P.isdigit() and len(P) <= 7
+        max_len = conf.get("validation.sku.max_length", 7)
+        return P.isdigit() and len(P) <= max_len
 
     def _vc_frescura(self, P: str) -> bool:
-        """Allow empty or up to 4 characters for frescura."""
-        if P == "":  # Permitir vacío explícitamente
+        if P == "":
             return True
-        return len(P) <= 4
+        max_len = conf.get("validation.frescura.max_length", 4)
+        return len(P) <= max_len
 
     def _vc_copias(self, P: str) -> bool:
-        """Allow empty or numeric string with max 2 digits."""
-        if P == "":  # Permitir vacío explícitamente
+        if P == "":
             return True
         return P.isdigit() and len(P) <= 2
 
     def _calculate_preview(self, row):
-        """ Lógica para mostrar descripción o cálculo completo """
+        """Lógica para mostrar descripción o cálculo completo."""
         mode = self.mode_var.get()
         sku_val: str = row['sku'].get().strip()
         frescura_val: str = row['frescura'].get().strip().upper()
@@ -315,28 +471,47 @@ class AppGeneradorCP:
          
         # Si estamos en modo frescuras y no hay CSV cargado válido
         if mode == "frescuras" and (self.shelf_data is None or self.shelf_data.empty):
-            
-            status_lbl.config(text="Cargue primero un archivo CSV válido.", fg="black")
+            status_lbl.config(
+                text=self.texts['status_blocked'],
+                fg=self.colors['status_blocked_fg'],
+                font=self.fonts['status_blocked']
+            )
             return
         
         if not sku_val:
-            status_lbl.config(text="Ingrese datos", fg="black")
+            status_lbl.config(
+                text=self.texts['status_default'],
+                fg=self.colors['status_default_fg'],
+                font=self.fonts['status']
+            )
             return
         
         if mode == "barcodes":
-            status_lbl.config(text="Ingrese texto para código de barras", fg="black")
+            status_lbl.config(
+                text=self.texts['status_barcodes'],
+                fg=self.colors['status_ok'],
+                font=self.fonts['status']
+            )
             return
 
         # 1. Validar SKU numéricamente
         if not validate_sku(sku_val):
-            status_lbl.config(text="SKU inválido", fg="red")
+            status_lbl.config(
+                text="SKU inválido",
+                fg=self.colors['status_warn'],
+                font=self.fonts['status']
+            )
             return
 
         # 2. Buscar en Base de Datos
         match = self.shelf_data.loc[self.shelf_data['CODIGO'] == sku_val]
         
         if match.empty:
-            status_lbl.config(text="SKU inexistente", fg="#d32f2f") # Rojo oscuro
+            status_lbl.config(
+                text="SKU inexistente",
+                fg=self.colors['status_warn'],
+                font=self.fonts['status']
+            )
             return
 
         # Obtener Descripción
@@ -344,17 +519,29 @@ class AppGeneradorCP:
 
         # CASO A: Solo SKU ingresado -> Mostrar solo Descripción
         if not frescura_val:
-            status_lbl.config(text=f"{descripcion}", fg="#1976D2") # Azul
+            status_lbl.config(
+                text=f"{descripcion}",
+                fg=self.colors['status_info'],
+                font=self.fonts['status']
+            )
             return
 
         # CASO B: SKU + Frescura -> Validar y Calcular Fechas
         if not validate_frescures(self.frescures_pattern, frescura_val):
-            status_lbl.config(text=f"Frescura incorrecta", fg="red")
+            status_lbl.config(
+                text="Frescura incorrecta",
+                fg=self.colors['status_warn'],
+                font=self.fonts['status']
+            )
             return
 
         fecha_elab_str = frescure_to_date(frescura_val)
         if not fecha_elab_str:
-            status_lbl.config(text=f"{descripcion} | Fecha inválida", fg="red")
+            status_lbl.config(
+                text=f"{descripcion} | Fecha inválida",
+                fg=self.colors['status_warn'],
+                font=self.fonts['status']
+            )
             return
 
         try:
@@ -364,14 +551,22 @@ class AppGeneradorCP:
             fecha_venc_str = fecha_venc.strftime("%d/%m/%Y")
             
             # Mensaje Completo
-            msg = f"{descripcion} | Lote: {fecha_elab_str} -> Cons. Pref.: {fecha_venc_str}"
-            status_lbl.config(text=msg, fg="#3BAB41") # Verde
+            msg = f"{descripcion} | Lote: {fecha_elab_str} => Cons. Pref: '{fecha_venc_str}'"
+            status_lbl.config(
+                text=msg,
+                fg=self.colors['status_ok'],
+                font=self.fonts['status']
+            )
             
         except Exception as e:
-            status_lbl.config(text=f"Error cálculo: {e}", fg="red")
+            status_lbl.config(
+                text=f"Error cálculo: {e}",
+                fg=self.colors['status_warn'],
+                font=self.fonts['status']
+            )
 
     def _ajustar_copias(self, entry: tk.Entry, delta: int):
-        """Suma o resta copias, manteniendo el valor en el rango 1–50."""
+        """Suma o resta copias, manteniendo el valor en el rango 1–99."""
         try:
             val = int(entry.get())
         except ValueError:
@@ -379,11 +574,10 @@ class AppGeneradorCP:
 
         val += delta
 
-        # Limitar entre 1 y 50
         if val < 1:
             val = 1
-        if val > 50:
-            val = 50
+        if val > 99:
+            val = 99
 
         entry.delete(0, tk.END)
         entry.insert(0, str(val))
@@ -395,9 +589,8 @@ class AppGeneradorCP:
             filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
         )
         if not file_path:
-            return  # Usuario canceló
+            return
 
-        # Actualizar ruta y cargar datos
         self.input_path_var.set(file_path)
         self.shelf_times_path = file_path
 
@@ -405,27 +598,104 @@ class AppGeneradorCP:
         if self.shelf_data.empty:
             messagebox.showwarning("Advertencia", "No se pudieron cargar datos del archivo seleccionado.")
         else:
-            # Actualizar TODAS las filas existentes para habilitar inputs
-            for row_data in self.rows_data:
-                row_data['frescura'].config(state="normal", bg="white")
-                row_data['sku'].config(state="normal", bg="white")
-                row_data['copias'].config(state="normal", bg="white")
-                row_data['status'].config(text="Ingrese datos", fg="gray")
-            
+            # Aplicar estilos a TODAS las filas consistentemente
+            self._apply_style_to_all_rows()
             messagebox.showinfo("Información", "Archivo cargado correctamente.")
 
     def _clear_all_rows(self):
+        # Bloquear si estamos en modo eliminación
+        if self.deletion_mode:
+            messagebox.showwarning("Operación bloqueada", "Finalice o cancele la eliminación de filas primero.")
+            return
+        
         for row in self.rows_data:
             row['frame'].destroy()
         self.rows_data.clear()
-        self.add_new_row()
+        
+        # Solo agregar fila si hay archivo cargado en modo frescuras, o si es modo barcodes
+        if self.mode_var.get() == "barcodes" or self.input_path_var.get():
+            self.add_new_row()
+
+    def _toggle_deletion_mode(self):
+        """Alterna entre modo normal y modo de eliminación."""
+        if not self.rows_data:
+            messagebox.showinfo("Sin filas", "No hay filas para eliminar.")
+            return
+
+        if not self.deletion_mode:
+            self.deletion_mode = True
+            self.btn_delete.config(text="Confirmar Eliminación", bg="#d32f2f", fg="white")
+            self.btn_cancel_delete.pack(side="left", padx=5, after=self.btn_delete)
+            # Deshabilitar otros botones
+            self.btn_add.config(state="disabled")
+            self.btn_clear.config(state="disabled")
+            self.btn_generate.config(state="disabled")
+            self._show_checkboxes()
+        else:
+            selected_indices = [i for i, row in enumerate(self.rows_data) if row['select_var'].get()]
+
+            if not selected_indices:
+                messagebox.showinfo("Seleccione filas", "Marca al menos una fila para eliminar.")
+                return
+
+            for index in reversed(selected_indices):
+                row = self.rows_data.pop(index)
+                row['frame'].destroy()
+
+            if not self.rows_data:
+                # Temporalmente desactivar deletion_mode para permitir add_new_row
+                self.deletion_mode = False
+                self.add_new_row()
+            else:
+                self._renumber_rows()
+
+            self._exit_deletion_mode()
+    
+    def _cancel_deletion_mode(self):
+        """Cancela el modo de eliminación sin eliminar filas."""
+        self._hide_checkboxes()
+        self._exit_deletion_mode()
+    
+    def _exit_deletion_mode(self):
+        """Restaura la UI al salir del modo eliminación."""
+        self.deletion_mode = False
+        self.btn_delete.config(text="Eliminar Fila", bg="SystemButtonFace", fg="black")
+        self.btn_cancel_delete.pack_forget()
+        # Rehabilitar otros botones
+        self.btn_add.config(state="normal")
+        self.btn_clear.config(state="normal")
+        self.btn_generate.config(state="normal")
+        self._hide_checkboxes()
+
+    def _show_checkboxes(self):
+        """Muestra todos los checkboxes de selección."""
+        self.header_select.grid()
+        for row in self.rows_data:
+            row['select_chk'].grid()
+
+    def _hide_checkboxes(self):
+        """Oculta todos los checkboxes de selección."""
+        self.header_select.grid_remove()
+        for row in self.rows_data:
+            row['select_chk'].grid_remove()
+            row['select_var'].set(False)
+
+    def _renumber_rows(self):
+        for i, row in enumerate(self.rows_data, start=1):
+            row['index_lbl'].config(text=str(i))
+            row['select_var'].set(False)
 
     def execute_generation(self):
+        # Bloquear si estamos en modo eliminación
+        if self.deletion_mode:
+            messagebox.showwarning("Operación bloqueada", "Finalice o cancele la eliminación de filas primero.")
+            return
+        
         mode = self.mode_var.get()
         if not mode:
             return
         
-        # --- VALIDACIÓN PREVIA: Verificar que todas las filas sean válidas ---
+        # --- VALIDACIÓN PREVIA ---
         filas_invalidas = []
         for idx, row in enumerate(self.rows_data, start=1):
             v1 = row['sku'].get().strip()
@@ -434,37 +704,29 @@ class AppGeneradorCP:
             status_text = row['status'].cget('text')
             status_fg = row['status'].cget('fg')
             
-            # Criterios de invalidez:
-            # 1. Campos vacíos (excepto frescura en modo barcodes)
-            # 2. Status en rojo (error)
-            # 3. Status que indica problema
-            
             if mode == "frescuras":
                 if not v1 or not v2:
                     filas_invalidas.append(f"Fila {idx}: Datos incompletos")
                     continue
-                if status_fg == "red" or "inválido" in status_text.lower() or "inexistente" in status_text.lower():
+                if status_fg == self.colors['status_warn'] or "inválido" in status_text.lower() or "inexistente" in status_text.lower():
                     filas_invalidas.append(f"Fila {idx}: {status_text}")
-            else:  # barcodes
+            else:
                 if not v1:
                     filas_invalidas.append(f"Fila {idx}: Texto vacío")
                     continue
             
-            # Validar cantidad
             try:
                 cantidad = int(cant_str)
-                if cantidad < 1 or cantidad > 50:
-                    filas_invalidas.append(f"Fila {idx}: Cantidad fuera de rango (1-50)")
+                if cantidad < 1 or cantidad > 99:
+                    filas_invalidas.append(f"Fila {idx}: Cantidad fuera de rango (1-99)")
             except ValueError:
                 filas_invalidas.append(f"Fila {idx}: Cantidad inválida")
         
-        # Si hay errores, mostrar mensaje y abortar
         if filas_invalidas:
             msg_error = "Corrija los siguientes errores antes de generar:\n\n" + "\n".join(filas_invalidas)
             messagebox.showerror("Validación fallida", msg_error)
             return
         
-        # --- CONTINUAR CON GENERACIÓN (código original) ---
         output_folder = self.output_path_var.get()
         query: List[List[str]] = []
         
@@ -480,17 +742,18 @@ class AppGeneradorCP:
             v2 = row['frescura'].get().strip()
             cant_str = row['copias'].get().strip()
             
-            if not v1: continue 
+            if not v1:
+                continue
             
             try:
                 cantidad = int(cant_str)
                 if cantidad < 1:
                     cantidad = 1
-            except: cantidad = 1
+            except:
+                cantidad = 1
 
             if mode == "frescuras":
                 if validate_sku(v1) and validate_frescures(self.frescures_pattern, v2.upper()):
-                    # Multiplicar filas (lógica de copias)
                     for _ in range(cantidad):
                         query.append([v1, v2.upper()])
             else:
@@ -502,8 +765,8 @@ class AppGeneradorCP:
 
         try:
             if mode == "frescuras":
-                Frescurer(self.shelf_times_path, self.template_path, output_folder, query, self.project_root)
-                msg = "Hojas generadas."
+                Frescurer(self.shelf_times_path, self.template_path, output_folder, query, self.project_root, self.frescures_pattern)
+                msg = "PDF de hojas de consumo preferente generado."
             else:
                 Barcoder(output_folder, self.temp_path, query, self.project_root)
                 msg = "Códigos generados."
@@ -513,24 +776,26 @@ class AppGeneradorCP:
             logger.error(f"Error: {e}", exc_info=True)
             messagebox.showerror("Error", str(e))
 
+
 def main():
     root = tk.Tk()
-    root.title("Generador de Etiquetas")
+    root.title(conf.get("app.name", "Generador de Etiquetas"))
     
-    # Centrar ventana
-    w, h = 650, 480
+    w = conf.get("app.window.width", 650)
+    h = conf.get("app.window.height", 480)
     ws, hs = root.winfo_screenwidth(), root.winfo_screenheight()
     x, y = (ws/2) - (w/2), (hs/2) - (h/2)
     root.geometry('%dx%d+%d+%d' % (w, h, x, y))
     
-    root.resizable(True, True)
+    resizable = conf.get("app.window.resizable", True)
+    root.resizable(resizable, resizable)
     
-    # Configurar pesos para que el contenido se expanda
     root.rowconfigure(3, weight=1) 
     root.columnconfigure(0, weight=1)
 
     AppGeneradorCP(root)
     root.mainloop()
+
 
 if __name__ == "__main__":
     main()

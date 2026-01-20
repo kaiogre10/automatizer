@@ -1,5 +1,6 @@
 {
     "chat.agent.thinking.generateTitles": false,
     "terminal.integrated.suggest.enabled": false,
-    "chat.tools.terminal.enableAutoApprove": false
+    "chat.tools.terminal.enableAutoApprove": false,
+    "chat.edits2.enabled": true
 }

@@ -6,7 +6,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 def validate_text(text: str) -> bool:
-    if len(text) > 0:
+    if len(text) > 0 and not text.isspace():
         return True
     else:
         return False
@@ -20,6 +20,13 @@ def validate_frescures(pattern: Pattern[str], text: str) -> bool:
     if valid or len(text) != 4 or valid_format is None or not text.isalnum():
         return False
     else:    
+        return True
+    
+def validate_shelf_life(text: str) -> bool:
+    text = text.strip()
+    if len(text) > 4 or not text.isdecimal():
+        return False
+    else:
         return True
            
 def validate_sku(text: str) -> bool:

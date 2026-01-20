@@ -3,21 +3,51 @@ import openpyxl
 from datetime import datetime, timedelta
 import os
 import time
-from typing import List
-import re
+from typing import List, Pattern, Any
 import pandas as pd
+import win32com.client as win32
 from utils.utils import validate_frescures, frescure_to_date, validate_sku
 
 logger = logging.getLogger(__name__)
 
+def excel_to_pdf(excel_path: str, pdf_path: str) -> bool:
+    """
+    Convierte un archivo Excel a PDF usando Excel de Windows.
+    Requiere tener Microsoft Excel instalado.
+    """
+    try:
+        excel_path = os.path.abspath(excel_path)
+        pdf_path = os.path.abspath(pdf_path)
+        
+        excel_app = win32.Dispatch("Excel.Application")
+        excel_app.Visible = False
+        excel_app.DisplayAlerts = False
+        
+        try:
+            workbook = excel_app.Workbooks.Open(excel_path)
+            # ExportAsFixedFormat: Type=0 es PDF
+            workbook.ExportAsFixedFormat(0, pdf_path)
+            workbook.Close(SaveChanges=False)
+            logger.info(f"PDF generado: {pdf_path}")
+            return True
+        finally:
+            excel_app.Quit()
+            
+    except ImportError:
+        logger.error("No se pudo importar win32com. Instale pywin32: pip install pywin32")
+        return False
+    except Exception as e:
+        logger.error(f"Error al convertir Excel a PDF: {e}", exc_info=True)
+        return False
+
 class Frescurer:
-    def __init__(self, shelf_time_path: str, template_path: str, output_path: str, query: List[List[str]], project_root: str):
+    def __init__(self, shelf_time_path: str, template_path: str, output_path: str, query: List[List[str]], project_root: str, frescures_pattern: Pattern[Any]):
         t0 = time.perf_counter()
         self.project_root = project_root
         self.shelf_table = self.load_data(shelf_time_path)
         self.template_path = template_path
         self.output_path = output_path
-        self.frescures_pattern = re.compile(r'^[A-L](0[1-9]|1[0-9]|2[0-9]|3[0-1])[0-9]$')
+        self.frescures_pattern = frescures_pattern
         all_frescures = self.validate_query(query)
         self.attend_query(self.shelf_table, all_frescures, self.template_path)
         logger.info(f"Proceso completado en: {time.perf_counter() - t0:.6f}")
@@ -97,8 +127,20 @@ class Frescurer:
             hoja_destino['D15'] = sku
             hoja_destino['D24'] = caducidad
         
-        # Guardar todo en un solo archivo
+        # Guardar archivo Excel temporal
         os.makedirs(self.output_path, exist_ok=True)
-        nombre_archivo = f"{self.output_path}/hojas_de_frescura.xlsx"
-        template.save(nombre_archivo)
-        logger.info(f"Documento generado: {nombre_archivo}")
+        excel_path = f"{self.output_path}/hojas_de_frescura.xlsx"
+        pdf_path = f"{self.output_path}/hojas_de_frescura.pdf"
+        template.save(excel_path)
+        logger.info(f"Excel temporal generado: {excel_path}")
+        
+        # Convertir a PDF
+        if excel_to_pdf(excel_path, pdf_path):
+            # Eliminar el archivo Excel temporal si el PDF se genero correctamente
+            try:
+                os.remove(excel_path)
+                logger.info(f"Excel temporal eliminado: {excel_path}")
+            except Exception as e:
+                logger.warning(f"No se pudo eliminar Excel temporal: {e}")
+        else:
+            logger.warning("No se pudo generar PDF, se mantiene el archivo Excel.")
