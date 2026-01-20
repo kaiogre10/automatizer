@@ -327,27 +327,40 @@ class AppGeneradorCP:
             self.output_path_var.set(folder)
 
     def _on_mode_change(self):
+        # 1. Limpiar todas las filas existentes primero
+        # Usamos una versión interna que no dependa del modo actual
+        for row in self.rows_data:
+            row['frame'].destroy()
+        self.rows_data.clear()
+        
+        # 2. Configurar el nuevo modo
         mode = self.mode_var.get()
-        # Actualizar encabezados
         if mode == "barcodes":
             self.header_sku.config(text="Texto")
             self.header_frescura.grid_remove()
+            # En barcodes, siempre agregamos una fila nueva vacía lista para usar
+            self.add_new_row()
         else:
             self.header_sku.config(text="SKU")
             self.header_frescura.grid()
+            # En frescuras, solo agregamos fila si hay archivo cargado
+            if self.input_path_var.get():
+                self.add_new_row()
         
-        # Aplicar estilos a todas las filas
+        # 3. Aplicar estilos (aunque estará vacío o con una nueva fila)
         self._apply_style_to_all_rows()
     
     def add_new_row(self):
         # Bloquear si estamos en modo eliminación
         if self.deletion_mode:
-            messagebox.showwarning("Operación bloqueada", "Finalice o cancele la eliminación de filas primero.")
+            messagebox.showwarning("Finalice o cancele la eliminación de filas primero.")
             return
         
         # Bloquear si estamos en modo frescuras y no hay archivo cargado
+        # (solo si ya hay filas, para no bloquear la primera fila inicial)
         if self.mode_var.get() == "frescuras" and not self.input_path_var.get():
-            messagebox.showwarning("Archivo requerido", "Debe cargar un archivo CSV antes de agregar filas en modo Frescuras.")
+            if self.rows_data:  # Solo mostrar mensaje si ya hay filas
+                messagebox.showwarning("Archivo requerido", "Debe cargar un archivo CSV antes de agregar filas en modo Frescuras.")
             return
         
         row_frame = tk.Frame(self.input_frame)
@@ -766,7 +779,7 @@ class AppGeneradorCP:
         try:
             if mode == "frescuras":
                 Frescurer(self.shelf_times_path, self.template_path, output_folder, query, self.project_root, self.frescures_pattern)
-                msg = "PDF de hojas de consumo preferente generado."
+                msg = "Hojas de consumo preferente generadas."
             else:
                 Barcoder(output_folder, self.temp_path, query, self.project_root)
                 msg = "Códigos generados."
@@ -775,7 +788,6 @@ class AppGeneradorCP:
         except Exception as e:
             logger.error(f"Error: {e}", exc_info=True)
             messagebox.showerror("Error", str(e))
-
 
 def main():
     root = tk.Tk()

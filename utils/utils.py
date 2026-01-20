@@ -6,6 +6,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 def validate_text(text: str) -> bool:
+    text = text.strip()
     if len(text) > 0 and not text.isspace():
         return True
     else:

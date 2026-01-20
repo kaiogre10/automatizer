@@ -1,44 +1,25 @@
 import logging
 import openpyxl
+from openpyxl.utils import get_column_letter, range_boundaries
+from copy import copy
 from datetime import datetime, timedelta
 import os
 import time
 from typing import List, Pattern, Any
 import pandas as pd
-import win32com.client as win32
 from utils.utils import validate_frescures, frescure_to_date, validate_sku
 
 logger = logging.getLogger(__name__)
 
-def excel_to_pdf(excel_path: str, pdf_path: str) -> bool:
-    """
-    Convierte un archivo Excel a PDF usando Excel de Windows.
-    Requiere tener Microsoft Excel instalado.
-    """
-    try:
-        excel_path = os.path.abspath(excel_path)
-        pdf_path = os.path.abspath(pdf_path)
-        
-        excel_app = win32.Dispatch("Excel.Application")
-        excel_app.Visible = False
-        excel_app.DisplayAlerts = False
-        
-        try:
-            workbook = excel_app.Workbooks.Open(excel_path)
-            # ExportAsFixedFormat: Type=0 es PDF
-            workbook.ExportAsFixedFormat(0, pdf_path)
-            workbook.Close(SaveChanges=False)
-            logger.info(f"PDF generado: {pdf_path}")
-            return True
-        finally:
-            excel_app.Quit()
-            
-    except ImportError:
-        logger.error("No se pudo importar win32com. Instale pywin32: pip install pywin32")
-        return False
-    except Exception as e:
-        logger.error(f"Error al convertir Excel a PDF: {e}", exc_info=True)
-        return False
+# Constantes de la plantilla
+ROWS_PER_PAGE = 25  # Filas que ocupa cada pagina A4
+MAX_COL = 5  # Columnas A-E (5 columnas)
+# Celdas donde se inyectan datos (fila relativa dentro de cada bloque)
+ROW_FRESCURA = 8   # D8
+ROW_SKU = 15       # D15
+ROW_CADUCIDAD = 24 # D24
+COL_DATA = 4       # Columna D
+
 
 class Frescurer:
     def __init__(self, shelf_time_path: str, template_path: str, output_path: str, query: List[List[str]], project_root: str, frescures_pattern: Pattern[Any]):
@@ -57,20 +38,18 @@ class Frescurer:
             DF_DIAS = pd.read_csv(shelf_time_table, encoding='utf-8') #type: ignore
             return DF_DIAS
         except FileNotFoundError as e:
-            logger.error(f"Error no se encontró archivo con días de cnosumo preferente: '{e}'", exc_info=True)
+            logger.error(f"Error no se encontro archivo con dias de consumo preferente: '{e}'", exc_info=True)
             return pd.DataFrame({'CODIGO': [] ,'DESCRIPCION': [], 'SHELF_LIFE': []})
 
     def validate_query(self, all_frescuras: List[List[str]]) -> List[List[str]]:
         complete_frescures: List[List[str]] = []
         for frescuras in all_frescuras:
             if not validate_frescures(self.frescures_pattern, frescuras[1]) or not validate_sku(frescuras[0]):
-                # logger.warning(f"Query no váida '{frescuras}'")
                 continue
                         
             fecha = frescure_to_date(frescuras[1])
             complete_frescures.append([frescuras[0], frescuras[1], fecha])
 
-        # logger.info(f"Valid: {complete_frescures}")
         return complete_frescures
     
     def attend_query(self, shelf_table: pd.DataFrame, all_frescures: List[List[str]], template_path: str):
@@ -92,55 +71,104 @@ class Frescurer:
             fecha_consumo_preferente = fecha_base + timedelta(days=shelf_life_days)
             fecha_final_consumo = fecha_consumo_preferente.strftime("%d/%m/%Y")
 
-            # Mostrar solo la parte de fecha sin la hora
             complete_data.append([frescure[0], codigo_frescura, frescura_final, fecha_final_consumo])
 
-        # La plantilla debe ser la hoja que tiene el formato A4
         logger.info(f"Final Query: {complete_data}")
         self.create_templates(complete_data, template_path)
 
     def create_templates(self, complete_data: List[List[str]], template_path: str):
         template = openpyxl.load_workbook(template_path)
         
-        # Obtener la hoja original como referencia
-        hoja_original = template.active
-        if hoja_original is None:
+        hoja = template.active
+        if hoja is None:
             return
         
-        nombre_hoja_original = hoja_original.title
+        # 1. Analizar plantilla original (Filas 1 a ROWS_PER_PAGE)
         
+        # Guardar alturas de fila
+        row_heights = {}
+        for row in range(1, ROWS_PER_PAGE + 1):
+            if row in hoja.row_dimensions:
+                row_heights[row] = hoja.row_dimensions[row].height
+        
+        # Guardar celdas combinadas que estén dentro del rango de la plantilla
+        merged_ranges = []
+        for merged_range in hoja.merged_cells.ranges:
+            min_col, min_row, max_col, max_row = range_boundaries(str(merged_range))
+            if min_row <= ROWS_PER_PAGE:
+                merged_ranges.append((min_col, min_row, max_col, max_row))
+
+        # Guardar contenido y estilos celda por celda
+        template_cells = {}
+        for row in range(1, ROWS_PER_PAGE + 1):
+            for col in range(1, MAX_COL + 1):
+                cell = hoja.cell(row=row, column=col)
+                template_cells[(row, col)] = {
+                    'value': cell.value,
+                    'font': copy(cell.font) if cell.has_style else None,
+                    'border': copy(cell.border) if cell.has_style else None,
+                    'fill': copy(cell.fill) if cell.has_style else None,
+                    'number_format': copy(cell.number_format) if cell.has_style else None,
+                    'protection': copy(cell.protection) if cell.has_style else None,
+                    'alignment': copy(cell.alignment) if cell.has_style else None,
+                }
+        
+        # 2. Generar copias
         for idx, data in enumerate(complete_data):
             sku = str(data[0])
             frescura = str(data[2])
             caducidad = str(data[3])
             
-            if idx == 0:
-                # Usar la hoja original para el primer registro
-                hoja_destino = hoja_original
-            else:
-                # Copiar la hoja original para los demás registros
-                hoja_destino = template.copy_worksheet(hoja_original)
-                hoja_destino.title = f"CP_{sku}_{idx}"
+            # El primer registro (idx=0) ya usa la plantilla original en filas 1-25
+            # Solo escribimos datos.
             
-            # Inyectar datos en las celdas
-            hoja_destino['D8'] = frescura
-            hoja_destino['D15'] = sku
-            hoja_destino['D24'] = caducidad
+            row_offset = idx * ROWS_PER_PAGE
+            
+            # Si es una copia (idx > 0), replicamos estructura
+            if idx > 0:
+                # A. Copiar filas y celdas
+                for row in range(1, ROWS_PER_PAGE + 1):
+                    target_row = row + row_offset
+                    
+                    # Copiar altura
+                    if row in row_heights:
+                        hoja.row_dimensions[target_row].height = row_heights[row]
+                    
+                    # Copiar celdas
+                    for col in range(1, MAX_COL + 1):
+                        source_data = template_cells.get((row, col))
+                        if source_data:
+                            target_cell = hoja.cell(row=target_row, column=col)
+                            target_cell.value = source_data['value']
+                            
+                            if source_data['font']: target_cell.font = copy(source_data['font'])
+                            if source_data['border']: target_cell.border = copy(source_data['border'])
+                            if source_data['fill']: target_cell.fill = copy(source_data['fill'])
+                            if source_data['number_format']: target_cell.number_format = source_data['number_format']
+                            if source_data['protection']: target_cell.protection = copy(source_data['protection'])
+                            if source_data['alignment']: target_cell.alignment = copy(source_data['alignment'])
+                
+                # B. Replicar celdas combinadas (merged cells) con el offset
+                for (min_col, min_row, max_col, max_row) in merged_ranges:
+                    # Ajustar filas con el offset
+                    new_min_row = min_row + row_offset
+                    new_max_row = max_row + row_offset
+                    
+                    # Crear string del rango, ej: "A26:B28"
+                    start_cell = f"{get_column_letter(min_col)}{new_min_row}"
+                    end_cell = f"{get_column_letter(max_col)}{new_max_row}"
+                    hoja.merge_cells(f"{start_cell}:{end_cell}")
+
+                # C. Agregar salto de página
+                hoja.row_breaks.append(openpyxl.worksheet.pagebreak.Break(id=row_offset))
+
+            # 3. Inyectar datos
+            hoja.cell(row=ROW_FRESCURA + row_offset, column=COL_DATA).value = frescura
+            hoja.cell(row=ROW_SKU + row_offset, column=COL_DATA).value = sku
+            hoja.cell(row=ROW_CADUCIDAD + row_offset, column=COL_DATA).value = caducidad
         
-        # Guardar archivo Excel temporal
+        # Guardar
         os.makedirs(self.output_path, exist_ok=True)
         excel_path = f"{self.output_path}/hojas_de_frescura.xlsx"
-        pdf_path = f"{self.output_path}/hojas_de_frescura.pdf"
         template.save(excel_path)
-        logger.info(f"Excel temporal generado: {excel_path}")
-        
-        # Convertir a PDF
-        if excel_to_pdf(excel_path, pdf_path):
-            # Eliminar el archivo Excel temporal si el PDF se genero correctamente
-            try:
-                os.remove(excel_path)
-                logger.info(f"Excel temporal eliminado: {excel_path}")
-            except Exception as e:
-                logger.warning(f"No se pudo eliminar Excel temporal: {e}")
-        else:
-            logger.warning("No se pudo generar PDF, se mantiene el archivo Excel.")
+        logger.info(f"Documento generado: {excel_path}")
