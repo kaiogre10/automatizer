@@ -14,6 +14,10 @@ from config.config_loader import conf
 
 logger = logging.getLogger(__name__)
 
+if not getattr(sys, 'frozen', False):
+    from cleanning_service import run_full_cleanup
+    run_full_cleanup(os.path.dirname(os.path.abspath(__file__)))
+
 class AppGeneradorCP:
     def __init__(self, master):
         self.master = master

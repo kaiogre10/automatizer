@@ -1,6 +1,5 @@
 import os
 import logging
-from logging.handlers import RotatingFileHandler
 from src.frescures import Frescurer
 from src.barcoder import Barcoder
 from services.cache_service import  clear_output_folders
@@ -17,13 +16,7 @@ def configure_logging():
         sh.setFormatter(fmt)
         sh.setLevel(level)
         root.addHandler(sh)
-        log_dir = os.path.join(os.path.dirname(__file__), "logs")
-        os.makedirs(log_dir, exist_ok=True)
-        fh = RotatingFileHandler(os.path.join(log_dir, "app.txt"), maxBytes=5_000_000, backupCount=3, encoding="utf-8")
-        fh.setFormatter(fmt)
-        fh.setLevel(level)
-        root.addHandler(fh)
-
+        
     root.setLevel(level)
 
 if __name__ == "__main__":
