@@ -11,7 +11,7 @@ EXCLUDED_DIRS = {".venv", "venv"}
 PYINSTALLER_DIRS = {"build", "dist"}
 
 def cleanup_pyinstaller_temp() -> None:
-    """Elimina carpetas temporales _MEIxxxxx de PyInstaller en %LOCALAPPDATA%\Temp."""
+    r"""Elimina carpetas temporales _MEIxxxxx de PyInstaller en %LOCALAPPDATA%\Temp."""
     import tempfile
     import glob
     logger.debug("Borrando cachés temporales de PyInstaller (_MEI*)")
@@ -76,12 +76,13 @@ def cleanup_pyinstaller_artifacts(project_root: str) -> None:
 
     for item in os.listdir(project_root):
         if item.endswith(".spec"):
-            spec_path = os.path.join(project_root, item)
-            try:
-                os.remove(spec_path)
-                logger.debug(f"Eliminado archivo .spec: {spec_path}")
-            except Exception as e:
-                logger.error(f"Error al eliminar {spec_path}: {e}", exc_info=True)
+            continue
+            # spec_path = os.path.join(project_root, item)
+            # try:
+            #     os.remove(spec_path)
+            #     logger.debug(f"Eliminado archivo .spec: {spec_path}")
+            # except Exception as e:
+            #     logger.error(f"Error al eliminar {spec_path}: {e}", exc_info=True)
 
 
 def cleanup_project_cache(project_root: str) -> None:
@@ -120,14 +121,12 @@ def run_full_cleanup(project_root: str, output_paths: List[str] | None = None) -
         clear_output_folders(output_paths)
     logger.info("Limpieza completa finalizada")
 
-
 def run_pre_gui_cleanup(project_root: str) -> None:
     """Limpieza al inicio (antes de la GUI): solo artefactos pesados (build, dist, _MEI)."""
     logger.info("Limpiando antes de arrancar GUI")
     cleanup_pyinstaller_artifacts(project_root)
     cleanup_pyinstaller_temp()
     logger.info("Limpieza inicial terminada")
-
 
 def run_post_gui_cleanup(project_root: str) -> None:
     """Limpieza al final (después de GUI): solo cache de Python generado en runtime."""

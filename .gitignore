@@ -38,8 +38,8 @@ build/
 *.jpeg
 *.pkl
 *.pdf
-*.spec
 *__pycache__
+*.exe
 
 # Ignorar perfectocr.txt
 *.cursorignore

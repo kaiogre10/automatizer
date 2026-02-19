@@ -9,7 +9,7 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
 from reportlab.platypus import Image
-from services.cache_service import cleanup_project_cache
+from cleanning_service import cleanup_project_cache
 
 logger = logging.getLogger(__name__)
 
@@ -88,4 +88,4 @@ class Barcoder:
         except Exception as e:
             logger.error(f"Error generando codigos de barras: {e}", exc_info=True)
             cleanup_project_cache(self.project_root)
-            return
+            return e
