@@ -61,8 +61,9 @@ class Barcoder:
                 for i in range(1, cantidad_copias + 1):
                     # Guardar en un PNG temporal (sin extensión, save() la añade)
                     temp_img_base = os.path.join(self.temp_path, f"temp_barcode_{texto_codigo}_{i}")
+                    opciones_renderizado = {'font_path': 'arial.ttf'}
                     codigo = Code128(texto_codigo, writer=ImageWriter())
-                    temp_img_path = codigo.save(temp_img_base)
+                    temp_img_path = codigo.save(temp_img_base, options=opciones_renderizado)
                     temp_files.append(temp_img_path)
                     
                     x, y = positions[current_pos_index]

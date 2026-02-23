@@ -14,13 +14,11 @@ class Config:
         return cls._instance
 
     def _get_base_path(self):
-        """Determina la ruta base dependiendo si es script o exe congelado."""
+        import sys
+        import os
         if getattr(sys, 'frozen', False):
-            # Si es ejecutable (PyInstaller)
-            return os.path.dirname(sys.executable)
+            return sys._MEIPASS
         else:
-            # Si es desarrollo (desde la raíz del proyecto)
-            # Asumimos que config_loader.py está en automatizer/config/
             return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
     def _load_config(self):

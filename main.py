@@ -48,11 +48,7 @@ class AppGeneradorCP:
         self.input_path_var = tk.StringVar(value="")
 
         # --- Datos y Variables ---
-        frescura_pattern = conf.get("validation.frescura.pattern", [])
-        # si frescura_pattern vino como lista/tupla, eso petará
-        if isinstance(frescura_pattern, (list, tuple)):
-            frescura_pattern = ''.join(frescura_pattern)  # unimos a string
-        self.frescures_pattern = re.compile(frescura_pattern)
+        frescura_pattern = conf.get("validation.frescura.pattern", r"^[A-L](0[1-9]|1[0-9]|2[0-9]|3[0-1])[0-9]$")
         self.frescures_pattern = re.compile(frescura_pattern)
         self.rows_data: List[Dict[str, Any]] = []
         self.mode_var = tk.StringVar(value="frescuras")
